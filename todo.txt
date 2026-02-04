@@ -13,3 +13,4 @@
  12. which large scheme project from github will be a good test for this compiler.
  13. how to overcome the memory recursion. issue.doc.
  14. in LispCompiler\docs\MEMORY_RECURSION_SOLUTIONS.md implement quick fix.
+ 15. ho will you implement a first pass memory manager.doc it.
