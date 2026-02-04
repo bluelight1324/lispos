@@ -11,3 +11,4 @@
 11, schemeedit is using c, tas 10 was to use the scheme/link compiler built now to use for the text editor.
  why was this.doc
  12. which large scheme project from github will be a good test for this compiler.
+ 13. how to overcome the memory recursion. issue.doc.
