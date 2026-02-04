@@ -18,7 +18,7 @@ LispObject *LISP_FALSE = NULL;
 static LispObject *symbol_table[SYMBOL_TABLE_SIZE];
 
 /* Simple memory tracking for GC */
-#define MAX_OBJECTS 65536
+#define MAX_OBJECTS 262144  /* Increased from 65536 for deep recursion support (256K objects) */
 static LispObject *all_objects[MAX_OBJECTS];
 static int num_objects = 0;
 
