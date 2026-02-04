@@ -51,4 +51,7 @@ void env_print(Environment *env);
 /* Create a global environment with standard bindings */
 Environment *env_create_global(void);
 
+/* Get all bindings as an alist ((name . value) ...) - for debugger */
+LispObject *env_get_all_bindings(Environment *env);
+
 #endif /* ENV_H */

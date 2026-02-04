@@ -1,0 +1,197 @@
+{
+  "name": "scheme-lisp-compiler",
+  "displayName": "Scheme (LispCompiler)",
+  "description": "Scheme/Lisp language support with LispCompiler integration",
+  "version": "1.0.0",
+  "publisher": "lispos",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers"
+  ],
+  "activationEvents": [
+    "onLanguage:scheme"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "scheme",
+        "aliases": [
+          "Scheme",
+          "scheme",
+          "Lisp"
+        ],
+        "extensions": [
+          ".scm",
+          ".ss",
+          ".rkt",
+          ".lisp",
+          ".lsp"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "scheme",
+        "scopeName": "source.scheme",
+        "path": "./syntaxes/scheme.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "scheme.run",
+        "title": "Run Scheme File",
+        "category": "Scheme"
+      },
+      {
+        "command": "scheme.compile",
+        "title": "Compile Scheme to Assembly",
+        "category": "Scheme"
+      },
+      {
+        "command": "scheme.buildAndRun",
+        "title": "Build and Run Scheme",
+        "category": "Scheme"
+      },
+      {
+        "command": "scheme.debug",
+        "title": "Debug Scheme File",
+        "category": "Scheme"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "scheme.run",
+        "key": "f5",
+        "when": "editorLangId == scheme && !inDebugMode"
+      },
+      {
+        "command": "scheme.debug",
+        "key": "ctrl+f5",
+        "when": "editorLangId == scheme"
+      },
+      {
+        "command": "scheme.compile",
+        "key": "ctrl+shift+b",
+        "when": "editorLangId == scheme"
+      }
+    ],
+    "configuration": {
+      "title": "Scheme LispCompiler",
+      "properties": {
+        "scheme.compilerPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the LispCompiler executable (lisp.exe)"
+        },
+        "scheme.ml64Path": {
+          "type": "string",
+          "default": "ml64.exe",
+          "description": "Path to MASM assembler (ml64.exe)"
+        },
+        "scheme.linkPath": {
+          "type": "string",
+          "default": "link.exe",
+          "description": "Path to linker (link.exe)"
+        },
+        "scheme.outputDirectory": {
+          "type": "string",
+          "default": "${workspaceFolder}/build",
+          "description": "Output directory for compiled files"
+        }
+      }
+    },
+    "debuggers": [
+      {
+        "type": "scheme",
+        "label": "Scheme Debug",
+        "program": "./out/debugAdapter.js",
+        "runtime": "node",
+        "languages": [
+          "scheme"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the Scheme file to debug",
+                "default": "${file}"
+              },
+              "compilerPath": {
+                "type": "string",
+                "description": "Path to the LispCompiler executable"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Stop at the first expression",
+                "default": false
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "scheme",
+            "request": "launch",
+            "name": "Debug Scheme File",
+            "program": "${file}",
+            "stopOnEntry": false
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Scheme: Debug File",
+            "description": "Debug the current Scheme file",
+            "body": {
+              "type": "scheme",
+              "request": "launch",
+              "name": "Debug Scheme",
+              "program": "^\"\\${file}\"",
+              "stopOnEntry": false
+            }
+          }
+        ]
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "scheme",
+        "required": [
+          "task"
+        ],
+        "properties": {
+          "task": {
+            "type": "string",
+            "description": "The scheme task to execute"
+          },
+          "file": {
+            "type": "string",
+            "description": "The Scheme file to process"
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@vscode/debugadapter": "^1.61.0",
+    "@vscode/debugprotocol": "^1.61.0"
+  }
+}

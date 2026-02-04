@@ -5,9 +5,26 @@
  */
 
 #include "eval.h"
+#include "debug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+/* ============================================================
+ * Essential #1: Recursion Depth Protection
+ * ============================================================ */
+#define MAX_EVAL_DEPTH 10000
+static int current_eval_depth = 0;
+
+/* Reset evaluation depth (call at program start) */
+void eval_reset_depth(void) {
+    current_eval_depth = 0;
+}
+
+/* Get current evaluation depth */
+int eval_get_depth(void) {
+    return current_eval_depth;
+}
 
 /* Forward declarations */
 static LispObject *eval_special_form(LispObject *expr, Environment *env);
@@ -51,8 +68,25 @@ static void bind_parameters(Environment *env, LispObject *params, LispObject *ar
 
 /* Main evaluation function */
 LispObject *eval(LispObject *expr, Environment *env) {
+    /* Essential #1: Check recursion depth */
+    if (++current_eval_depth > MAX_EVAL_DEPTH) {
+        current_eval_depth--;
+        lisp_error("Maximum recursion depth exceeded (%d levels)", MAX_EVAL_DEPTH);
+        return make_nil();
+    }
+
+    /* Debug hook: check if we should break at this expression */
+    if (debug_is_enabled()) {
+        debug_check_break(expr, env);
+    }
+
     /* Self-evaluating objects */
-    if (!expr) return make_nil();
+    if (!expr) {
+        current_eval_depth--;
+        return make_nil();
+    }
+
+    LispObject *result = NULL;
 
     switch (expr->type) {
         case LISP_NIL:
@@ -62,16 +96,19 @@ LispObject *eval(LispObject *expr, Environment *env) {
         case LISP_CHARACTER:
         case LISP_LAMBDA:
         case LISP_PRIMITIVE:
-            return expr;
+            result = expr;
+            break;
 
         case LISP_SYMBOL: {
             /* Variable lookup */
             LispObject *value = env_lookup(env, expr);
             if (!value) {
                 lisp_error("Unbound variable: %s", expr->symbol.name);
-                return make_nil();
+                result = make_nil();
+            } else {
+                result = value;
             }
-            return value;
+            break;
         }
 
         case LISP_CONS: {
@@ -82,23 +119,32 @@ LispObject *eval(LispObject *expr, Environment *env) {
                 if (value && is_macro(value)) {
                     /* Expand macro and evaluate result */
                     LispObject *expanded = apply(value, cdr(expr), env);
-                    return eval(expanded, env);
+                    result = eval(expanded, env);
+                    break;
                 }
             }
 
             /* Special forms */
             LispObject *special = eval_special_form(expr, env);
-            if (special) return special;
+            if (special) {
+                result = special;
+                break;
+            }
 
             /* Function application */
-            return eval_application(expr, env);
+            result = eval_application(expr, env);
+            break;
         }
 
         default:
             lisp_error("Cannot evaluate expression of type: %s",
                        lisp_type_name(expr->type));
-            return make_nil();
+            result = make_nil();
+            break;
     }
+
+    current_eval_depth--;
+    return result;
 }
 
 /* Evaluate special forms */
@@ -655,11 +701,19 @@ LispObject *expand_quasiquote(LispObject *expr, Environment *env, int depth) {
 static LispObject *eval_application(LispObject *expr, Environment *env) {
     /* Evaluate the function */
     LispObject *func = eval(car(expr), env);
+    gc_add_root(&func);  /* Protect from GC while evaluating arguments */
 
     /* Evaluate arguments */
     LispObject *args = eval_list(cdr(expr), env);
+    gc_add_root(&args);  /* Protect from GC during apply */
 
-    return apply(func, args, env);
+    /* Apply function */
+    LispObject *result = apply(func, args, env);
+
+    gc_remove_root(&args);
+    gc_remove_root(&func);
+
+    return result;
 }
 
 /* Evaluate all items in a list */
@@ -668,10 +722,13 @@ LispObject *eval_list(LispObject *list, Environment *env) {
 
     LispObject *head = NULL;
     LispObject *tail = NULL;
+    gc_add_root(&head);  /* Protect result list from GC */
 
     while (is_cons(list)) {
         LispObject *value = eval(car(list), env);
+        gc_add_root(&value);  /* Protect value while creating cons */
         LispObject *new_cell = make_cons(value, make_nil());
+        gc_remove_root(&value);
 
         if (tail) {
             tail->cons.cdr = new_cell;
@@ -683,6 +740,7 @@ LispObject *eval_list(LispObject *list, Environment *env) {
         list = cdr(list);
     }
 
+    gc_remove_root(&head);
     return head ? head : make_nil();
 }
 
@@ -735,7 +793,20 @@ LispObject *apply(LispObject *func, LispObject *args, Environment *env) {
                     (!has_rest && argc == param_count)) {
                     Environment *call_env = env_create(func->lambda.env);
                     bind_parameters(call_env, params, args);
-                    return eval_sequence(body, call_env);
+
+                    /* Debug: push call frame */
+                    if (debug_is_enabled()) {
+                        debug_push_frame("case-lambda", args, call_env, NULL);
+                    }
+
+                    LispObject *result = eval_sequence(body, call_env);
+
+                    /* Debug: pop call frame */
+                    if (debug_is_enabled()) {
+                        debug_pop_frame();
+                    }
+
+                    return result;
                 }
 
                 clauses = cdr(clauses);
@@ -752,8 +823,19 @@ LispObject *apply(LispObject *func, LispObject *args, Environment *env) {
         /* Bind parameters to arguments */
         bind_parameters(call_env, func->lambda.params, args);
 
+        /* Debug: push call frame */
+        if (debug_is_enabled()) {
+            const char *fn_name = func->lambda.name ? func->lambda.name : "<lambda>";
+            debug_push_frame(fn_name, args, call_env, NULL);
+        }
+
         /* Evaluate body */
         LispObject *result = eval_sequence(func->lambda.body, call_env);
+
+        /* Debug: pop call frame */
+        if (debug_is_enabled()) {
+            debug_pop_frame();
+        }
 
         /* Note: In a real implementation, we'd need GC to clean up call_env */
 

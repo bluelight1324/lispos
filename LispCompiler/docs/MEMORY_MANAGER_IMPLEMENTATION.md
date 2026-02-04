@@ -1,5 +1,25 @@
 # First-Pass Memory Manager Implementation
 
+## Implementation Status: ✅ COMPLETE
+
+The mark-and-sweep garbage collector has been successfully implemented and tested.
+
+**Changes made:**
+- Added GC root registry in `lisp.c` (`gc_add_root`, `gc_remove_root`, `gc_add_env_root`, `gc_remove_env_root`)
+- Implemented mark phase (`gc_mark_object`, `gc_mark_env`, `gc_mark_binding`)
+- Implemented sweep phase (`gc_sweep`)
+- Added `gc_collect()` entry point with statistics
+- Modified `lisp_alloc()` to trigger GC at 75% capacity threshold
+- Protected temporaries in `eval.c` during function application
+- Registered global environment as root in `main.c`
+
+**Test Results:**
+- GC successfully collects garbage objects
+- Live objects survive collection
+- Iterative tests with 200K+ allocations pass without out-of-memory errors
+
+---
+
 ## Overview
 
 This document describes how to implement a simple mark-and-sweep garbage collector for the LispOS Scheme interpreter. This is a "first-pass" implementation focused on correctness over performance.
@@ -479,18 +499,18 @@ void lisp_init(void) {
 
 ## Implementation Checklist
 
-- [ ] Add `marked` field to `LispObject` struct
-- [ ] Implement `gc_mark_object()` for all types
-- [ ] Implement `gc_mark_env()` for environments
-- [ ] Implement `gc_sweep()` to free unmarked objects
-- [ ] Implement `gc_collect()` main entry point
-- [ ] Add root registry (`gc_add_root`, `gc_remove_root`)
-- [ ] Modify `lisp_alloc()` to trigger GC
-- [ ] Protect temporaries in `eval.c`
-- [ ] Register global environment as root
-- [ ] Add GC statistics functions
-- [ ] Test with garbage-intensive programs
-- [ ] Test that live objects survive GC
+- [x] Add `marked` field to `LispObject` struct (already existed as `gc_mark`)
+- [x] Implement `gc_mark_object()` for all types
+- [x] Implement `gc_mark_env()` for environments
+- [x] Implement `gc_sweep()` to free unmarked objects
+- [x] Implement `gc_collect()` main entry point
+- [x] Add root registry (`gc_add_root`, `gc_remove_root`, `gc_add_env_root`, `gc_remove_env_root`)
+- [x] Modify `lisp_alloc()` to trigger GC
+- [x] Protect temporaries in `eval.c`
+- [x] Register global environment as root
+- [x] Add GC statistics functions (`gc_stats`)
+- [x] Test with garbage-intensive programs
+- [x] Test that live objects survive GC
 
 ## Estimated Effort
 

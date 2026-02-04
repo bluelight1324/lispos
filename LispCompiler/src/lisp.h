@@ -253,8 +253,41 @@ const char *lisp_type_name(LispType type);
 LispObject *lisp_alloc(void);
 void lisp_free(LispObject *obj);
 
-/* Error handling */
+/* Garbage Collection */
+void gc_add_root(LispObject **root);
+void gc_remove_root(LispObject **root);
+void gc_add_env_root(Environment *env);
+void gc_remove_env_root(Environment *env);
+void gc_collect(void);
+void gc_stats(int *collections, int *freed, int *current);
+
+/* ============================================================
+ * Essential #2: Enhanced Error Handling with Location
+ * ============================================================ */
+
+/* Set current source location (called by parser) */
+void lisp_set_location(const char *file, int line, int column);
+
+/* Get current source location (returns via pointers) */
+void lisp_get_location(const char **file, int *line, int *column);
+
+/* Clear source location */
+void lisp_clear_location(void);
+
+/* Error handling - basic */
 void lisp_error(const char *format, ...);
+
+/* Error handling - with explicit location */
+void lisp_error_at(const char *file, int line, int column, const char *format, ...);
+
+/* Get last error message */
+const char *lisp_get_last_error(void);
+
+/* Check if an error occurred */
+int lisp_had_error(void);
+
+/* Clear error state */
+void lisp_clear_error(void);
 
 /* R6RS: Vector operations */
 LispObject *vector_ref(LispObject *vec, size_t index);
@@ -280,5 +313,33 @@ LispObject *hashtable_values(LispObject *ht);
 LispObject *record_ref(LispObject *rec, int field_index);
 void record_set(LispObject *rec, int field_index, LispObject *value);
 LispObject *record_rtd(LispObject *rec);
+
+/* ============================================================
+ * Essential #3: Memory Safety Functions
+ * ============================================================ */
+
+/* Safe string copy with bounds checking */
+char *safe_strdup(const char *src);
+char *safe_strndup(const char *src, size_t max_len);
+
+/* Safe string concatenation */
+char *safe_strcat(const char *s1, const char *s2);
+
+/* ============================================================
+ * Essential #4: Input Validation
+ * ============================================================ */
+
+/* Maximum sizes for input validation */
+#define MAX_INPUT_SIZE (10 * 1024 * 1024)  /* 10 MB max input */
+#define MAX_STRING_LENGTH 1000000
+#define MAX_LIST_LENGTH 1000000
+#define MAX_FILE_PATH 4096
+#define MAX_SYMBOL_LENGTH 1024
+
+/* Validate input sizes */
+int validate_string_length(size_t len);
+int validate_list_length(size_t len);
+int validate_file_path(const char *path);
+int validate_input_size(size_t size);
 
 #endif /* LISP_H */

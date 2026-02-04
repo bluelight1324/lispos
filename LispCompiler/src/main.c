@@ -19,8 +19,9 @@
 #include "eval.h"
 #include "primitives.h"
 #include "codegen.h"
+#include "debug.h"
 
-#define VERSION "1.0.0"
+#define VERSION "1.1.0"
 #define MAX_LINE_LENGTH 4096
 
 /* Print usage information */
@@ -30,11 +31,14 @@ static void print_usage(const char *program_name) {
     printf("Usage:\n");
     printf("  %s                      Start interactive REPL\n", program_name);
     printf("  %s <file.scm>           Execute file (interpreted)\n", program_name);
+    printf("  %s -d <file.scm>        Debug file\n", program_name);
     printf("  %s -c <file.scm>        Compile to MASM assembly\n", program_name);
     printf("  %s -c <file.scm> -o out Compile to specified output file\n", program_name);
     printf("\n");
     printf("Options:\n");
     printf("  -c, --compile    Compile to MASM x64 assembly\n");
+    printf("  -d, --debug      Run with debugger\n");
+    printf("  --debug-json     Run debugger in JSON mode (for IDE)\n");
     printf("  -o, --output     Specify output file\n");
     printf("  -h, --help       Show this help message\n");
     printf("  -v, --version    Show version information\n");
@@ -43,6 +47,16 @@ static void print_usage(const char *program_name) {
     printf("  ,quit            Exit the REPL\n");
     printf("  ,help            Show REPL help\n");
     printf("  ,env             Show current environment\n");
+    printf("\n");
+    printf("Debug Commands (when in debug mode):\n");
+    printf("  run, r           Continue execution\n");
+    printf("  step, s          Step into\n");
+    printf("  next, n          Step over\n");
+    printf("  finish, f        Step out\n");
+    printf("  break <line>     Set breakpoint\n");
+    printf("  backtrace, bt    Show call stack\n");
+    printf("  print <expr>     Evaluate expression\n");
+    printf("  help             Show debug help\n");
     printf("\n");
 }
 
@@ -85,6 +99,9 @@ static int execute_file(const char *path) {
     Environment *global = env_create_global();
     register_primitives(global);
 
+    /* Register global environment as GC root */
+    gc_add_env_root(global);
+
     /* Parse */
     Lexer lexer;
     lexer_init(&lexer, source);
@@ -110,7 +127,90 @@ static int execute_file(const char *path) {
     }
 
     free(source);
+    gc_remove_env_root(global);
     env_free(global);
+    lisp_shutdown();
+
+    return exit_code;
+}
+
+/* Execute a file with debugger */
+static int debug_file(const char *path, int json_mode) {
+    char *source = read_file(path);
+    if (!source) {
+        fprintf(stderr, "Error: Cannot open file '%s'\n", path);
+        return 1;
+    }
+
+    /* Initialize Lisp system */
+    lisp_init();
+
+    /* Initialize debugger */
+    debug_init();
+    debug_enable();
+    debug_set_json_mode(json_mode);
+    debug_set_current_location(path, 1, 1);
+
+    /* Create global environment */
+    Environment *global = env_create_global();
+    register_primitives(global);
+
+    /* Register global environment as GC root */
+    gc_add_env_root(global);
+
+    /* Parse */
+    Lexer lexer;
+    lexer_init(&lexer, source);
+
+    Parser parser;
+    parser_init(&parser, &lexer);
+
+    LispObject *program = parse_program(&parser);
+
+    if (parser_had_error(&parser)) {
+        fprintf(stderr, "Parse error: %s\n", parser_error_message(&parser));
+        free(source);
+        debug_shutdown();
+        lisp_shutdown();
+        return 1;
+    }
+
+    if (!json_mode) {
+        printf("Scheme Debugger v%s\n", VERSION);
+        printf("Debugging: %s\n", path);
+        printf("Type 'help' for debugger commands.\n\n");
+    }
+
+    /* Execute each expression */
+    int exit_code = 0;
+    int line_num = 1;
+
+    while (is_cons(program)) {
+        /* Update source location */
+        debug_set_current_location(path, line_num, 1);
+
+        LispObject *result = eval(car(program), global);
+        (void)result;
+
+        /* Check if debugger wants to stop */
+        if (!debug_is_enabled()) {
+            break;
+        }
+
+        program = cdr(program);
+        line_num++;
+    }
+
+    if (!json_mode) {
+        printf("\nProgram finished.\n");
+    } else {
+        debug_send_json_event("terminated", NULL);
+    }
+
+    free(source);
+    gc_remove_env_root(global);
+    env_free(global);
+    debug_shutdown();
     lisp_shutdown();
 
     return exit_code;
@@ -131,6 +231,9 @@ static void repl(void) {
     /* Create global environment */
     Environment *global = env_create_global();
     register_primitives(global);
+
+    /* Register global environment as GC root */
+    gc_add_env_root(global);
 
     input_buffer[0] = '\0';
 
@@ -244,6 +347,7 @@ static void repl(void) {
 
     printf("Goodbye!\n");
 
+    gc_remove_env_root(global);
     env_free(global);
     lisp_shutdown();
 }
@@ -251,6 +355,8 @@ static void repl(void) {
 /* Main entry point */
 int main(int argc, char *argv[]) {
     int compile_mode = 0;
+    int debug_mode = 0;
+    int debug_json_mode = 0;
     const char *input_file = NULL;
     const char *output_file = NULL;
 
@@ -266,6 +372,15 @@ int main(int argc, char *argv[]) {
         }
         if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--compile") == 0) {
             compile_mode = 1;
+            continue;
+        }
+        if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--debug") == 0) {
+            debug_mode = 1;
+            continue;
+        }
+        if (strcmp(argv[i], "--debug-json") == 0) {
+            debug_mode = 1;
+            debug_json_mode = 1;
             continue;
         }
         if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
@@ -324,6 +439,14 @@ int main(int argc, char *argv[]) {
         }
 
         return result;
+    }
+
+    if (debug_mode) {
+        if (!input_file) {
+            fprintf(stderr, "Error: No input file specified for debugging\n");
+            return 1;
+        }
+        return debug_file(input_file, debug_json_mode);
     }
 
     if (input_file) {

@@ -26,4 +26,8 @@ LispObject *expand_macros(LispObject *expr, Environment *env);
 /* Expand quasiquote expression */
 LispObject *expand_quasiquote(LispObject *expr, Environment *env, int depth);
 
+/* Essential #1: Recursion depth management */
+void eval_reset_depth(void);
+int eval_get_depth(void);
+
 #endif /* EVAL_H */

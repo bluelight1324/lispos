@@ -3,10 +3,14 @@
  */
 
 #include "lisp.h"
+#include "env.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+
+/* Uncomment for GC debugging output */
+/* #define GC_DEBUG 1 */
 
 /* Global singletons */
 LispObject *LISP_NIL_OBJ = NULL;
@@ -22,6 +26,252 @@ static LispObject *symbol_table[SYMBOL_TABLE_SIZE];
 static LispObject *all_objects[MAX_OBJECTS];
 static int num_objects = 0;
 
+/* ============================================================
+ * Garbage Collector
+ * ============================================================ */
+
+/* GC Configuration */
+#define GC_THRESHOLD 0.75  /* Trigger GC at 75% capacity */
+#define MAX_GC_ROOTS 1024
+#define MAX_ENV_ROOTS 64
+
+/* GC Root Registry */
+static LispObject **gc_roots[MAX_GC_ROOTS];
+static int num_gc_roots = 0;
+
+/* Environment Root Registry */
+static Environment *env_roots[MAX_ENV_ROOTS];
+static int num_env_roots = 0;
+
+/* GC Statistics */
+static int gc_collections = 0;
+static int gc_objects_freed = 0;
+
+/* Forward declarations for GC */
+static void gc_mark_object(LispObject *obj);
+static void gc_mark_binding(Binding *binding);
+static void gc_mark_env(Environment *env);
+static void gc_sweep(void);
+
+/* Register a root pointer */
+void gc_add_root(LispObject **root) {
+    if (num_gc_roots < MAX_GC_ROOTS) {
+        gc_roots[num_gc_roots++] = root;
+    }
+}
+
+/* Remove a root pointer */
+void gc_remove_root(LispObject **root) {
+    for (int i = 0; i < num_gc_roots; i++) {
+        if (gc_roots[i] == root) {
+            gc_roots[i] = gc_roots[--num_gc_roots];
+            return;
+        }
+    }
+}
+
+/* Register an environment as a root */
+void gc_add_env_root(Environment *env) {
+    if (num_env_roots < MAX_ENV_ROOTS) {
+        env_roots[num_env_roots++] = env;
+    }
+}
+
+/* Remove an environment root */
+void gc_remove_env_root(Environment *env) {
+    for (int i = 0; i < num_env_roots; i++) {
+        if (env_roots[i] == env) {
+            env_roots[i] = env_roots[--num_env_roots];
+            return;
+        }
+    }
+}
+
+/* Mark a single binding */
+static void gc_mark_binding(Binding *binding) {
+    while (binding != NULL) {
+        gc_mark_object(binding->symbol);
+        gc_mark_object(binding->value);
+        binding = binding->next;
+    }
+}
+
+/* Mark environment frames */
+static void gc_mark_env(Environment *env) {
+    while (env != NULL) {
+        gc_mark_binding(env->bindings);
+        env = env->parent;
+    }
+}
+
+/* Mark a single object and its children */
+static void gc_mark_object(LispObject *obj) {
+    if (obj == NULL || obj->gc_mark) {
+        return;  /* Already marked or null */
+    }
+
+    obj->gc_mark = 1;
+
+    /* Recursively mark children based on type */
+    switch (obj->type) {
+        case LISP_CONS:
+            gc_mark_object(obj->cons.car);
+            gc_mark_object(obj->cons.cdr);
+            break;
+
+        case LISP_LAMBDA:
+            gc_mark_object(obj->lambda.params);
+            gc_mark_object(obj->lambda.body);
+            gc_mark_env(obj->lambda.env);
+            break;
+
+        case LISP_MACRO:
+            gc_mark_object(obj->macro.params);
+            gc_mark_object(obj->macro.body);
+            gc_mark_env(obj->macro.env);
+            break;
+
+        case LISP_VECTOR:
+            for (size_t i = 0; i < obj->vector.length; i++) {
+                gc_mark_object(obj->vector.elements[i]);
+            }
+            break;
+
+        case LISP_HASHTABLE:
+            for (size_t i = 0; i < obj->hashtable.capacity; i++) {
+                if (obj->hashtable.keys[i]) {
+                    gc_mark_object(obj->hashtable.keys[i]);
+                    gc_mark_object(obj->hashtable.values[i]);
+                }
+            }
+            break;
+
+        case LISP_RECORD:
+            gc_mark_object(obj->record.rtd);
+            /* Mark all fields */
+            if (obj->record.rtd && is_record_type(obj->record.rtd)) {
+                /* Count total fields including parent */
+                int total_fields = obj->record.rtd->record_type.field_count;
+                LispObject *parent = obj->record.rtd->record_type.parent;
+                while (is_record_type(parent)) {
+                    total_fields += parent->record_type.field_count;
+                    parent = parent->record_type.parent;
+                }
+                for (int i = 0; i < total_fields; i++) {
+                    gc_mark_object(obj->record.fields[i]);
+                }
+            }
+            break;
+
+        case LISP_RECORD_TYPE:
+            gc_mark_object(obj->record_type.name);
+            gc_mark_object(obj->record_type.parent);
+            gc_mark_object(obj->record_type.fields);
+            break;
+
+        case LISP_CONDITION:
+            gc_mark_object(obj->condition.type);
+            gc_mark_object(obj->condition.message);
+            gc_mark_object(obj->condition.irritants);
+            gc_mark_object(obj->condition.who);
+            break;
+
+        case LISP_VALUES:
+            for (int i = 0; i < obj->values.count; i++) {
+                gc_mark_object(obj->values.vals[i]);
+            }
+            break;
+
+        /* Atomic types - no children to mark */
+        case LISP_NIL:
+        case LISP_BOOLEAN:
+        case LISP_NUMBER:
+        case LISP_CHARACTER:
+        case LISP_STRING:
+        case LISP_SYMBOL:
+        case LISP_PRIMITIVE:
+        case LISP_PORT:
+        case LISP_BYTEVECTOR:
+            break;
+    }
+}
+
+/* Mark all roots */
+static void gc_mark_roots(void) {
+    /* Mark registered roots */
+    for (int i = 0; i < num_gc_roots; i++) {
+        if (gc_roots[i] && *gc_roots[i]) {
+            gc_mark_object(*gc_roots[i]);
+        }
+    }
+
+    /* Mark registered environment roots */
+    for (int i = 0; i < num_env_roots; i++) {
+        if (env_roots[i]) {
+            gc_mark_env(env_roots[i]);
+        }
+    }
+
+    /* Mark symbol table (symbols are permanent) */
+    for (int i = 0; i < SYMBOL_TABLE_SIZE; i++) {
+        if (symbol_table[i]) {
+            gc_mark_object(symbol_table[i]);
+        }
+    }
+
+    /* Mark global singletons */
+    gc_mark_object(LISP_NIL_OBJ);
+    gc_mark_object(LISP_TRUE);
+    gc_mark_object(LISP_FALSE);
+}
+
+/* Sweep phase - free unmarked objects */
+static void gc_sweep(void) {
+    int new_count = 0;
+
+    for (int i = 0; i < num_objects; i++) {
+        LispObject *obj = all_objects[i];
+
+        if (obj->gc_mark) {
+            /* Object is reachable - keep it */
+            obj->gc_mark = 0;  /* Reset for next GC cycle */
+            all_objects[new_count++] = obj;
+        } else {
+            /* Object is garbage - free it */
+            lisp_free(obj);
+        }
+    }
+
+    num_objects = new_count;
+}
+
+/* Run garbage collection */
+void gc_collect(void) {
+    int before = num_objects;
+
+    /* Mark phase */
+    gc_mark_roots();
+
+    /* Sweep phase */
+    gc_sweep();
+
+    /* Statistics */
+    gc_collections++;
+    gc_objects_freed += (before - num_objects);
+
+    #ifdef GC_DEBUG
+    printf("[GC] Collection #%d: %d -> %d objects (%d freed)\n",
+           gc_collections, before, num_objects, before - num_objects);
+    #endif
+}
+
+/* Get GC statistics */
+void gc_stats(int *collections, int *freed, int *current) {
+    if (collections) *collections = gc_collections;
+    if (freed) *freed = gc_objects_freed;
+    if (current) *current = num_objects;
+}
+
 /* Hash function for symbols */
 static uint32_t hash_string(const char *str) {
     uint32_t hash = 5381;
@@ -34,15 +284,25 @@ static uint32_t hash_string(const char *str) {
 
 /* Allocate a new object */
 LispObject *lisp_alloc(void) {
+    /* Check if GC needed */
+    if (num_objects >= (int)(MAX_OBJECTS * GC_THRESHOLD)) {
+        gc_collect();
+    }
+
+    /* Check if still out of memory after GC */
     if (num_objects >= MAX_OBJECTS) {
-        lisp_error("Out of memory: too many objects");
+        lisp_error("Out of memory: %d objects allocated", num_objects);
         return NULL;
     }
+
+    /* Allocate new object */
     LispObject *obj = (LispObject *)calloc(1, sizeof(LispObject));
     if (!obj) {
         lisp_error("Out of memory");
         return NULL;
     }
+
+    obj->gc_mark = 0;
     all_objects[num_objects++] = obj;
     return obj;
 }
@@ -600,13 +860,121 @@ const char *lisp_type_name(LispType type) {
     }
 }
 
-/* Error handling */
+/* ============================================================
+ * Essential #2: Enhanced Error Handling with Location
+ * ============================================================ */
+
+/* Global error state */
+static const char *current_error_file = NULL;
+static int current_error_line = 0;
+static int current_error_column = 0;
+static char last_error_message[1024] = {0};
+static int error_occurred = 0;
+
+/* Set current source location */
+void lisp_set_location(const char *file, int line, int column) {
+    current_error_file = file;
+    current_error_line = line;
+    current_error_column = column;
+}
+
+/* Get current source location */
+void lisp_get_location(const char **file, int *line, int *column) {
+    if (file) *file = current_error_file;
+    if (line) *line = current_error_line;
+    if (column) *column = current_error_column;
+}
+
+/* Clear source location */
+void lisp_clear_location(void) {
+    current_error_file = NULL;
+    current_error_line = 0;
+    current_error_column = 0;
+}
+
+/* Get last error message */
+const char *lisp_get_last_error(void) {
+    return last_error_message;
+}
+
+/* Check if an error occurred */
+int lisp_had_error(void) {
+    return error_occurred;
+}
+
+/* Clear error state */
+void lisp_clear_error(void) {
+    error_occurred = 0;
+    last_error_message[0] = '\0';
+}
+
+/* Error handling - basic (uses current location if set) */
 void lisp_error(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    fprintf(stderr, "Error: ");
-    vfprintf(stderr, format, args);
-    fprintf(stderr, "\n");
+
+    error_occurred = 1;
+
+    /* Format message to buffer */
+    char msg_buffer[512];
+    vsnprintf(msg_buffer, sizeof(msg_buffer), format, args);
+
+    /* Print with location if available */
+    if (current_error_file && current_error_line > 0) {
+        fprintf(stderr, "Error at %s:%d:%d: %s\n",
+                current_error_file,
+                current_error_line,
+                current_error_column,
+                msg_buffer);
+        snprintf(last_error_message, sizeof(last_error_message),
+                 "%s:%d:%d: %s",
+                 current_error_file,
+                 current_error_line,
+                 current_error_column,
+                 msg_buffer);
+    } else if (current_error_line > 0) {
+        fprintf(stderr, "Error at line %d: %s\n",
+                current_error_line,
+                msg_buffer);
+        snprintf(last_error_message, sizeof(last_error_message),
+                 "line %d: %s",
+                 current_error_line,
+                 msg_buffer);
+    } else {
+        fprintf(stderr, "Error: %s\n", msg_buffer);
+        snprintf(last_error_message, sizeof(last_error_message),
+                 "%s", msg_buffer);
+    }
+
+    va_end(args);
+}
+
+/* Error handling - with explicit location */
+void lisp_error_at(const char *file, int line, int column, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    error_occurred = 1;
+
+    /* Format message to buffer */
+    char msg_buffer[512];
+    vsnprintf(msg_buffer, sizeof(msg_buffer), format, args);
+
+    /* Print with location */
+    if (file && line > 0) {
+        fprintf(stderr, "Error at %s:%d:%d: %s\n", file, line, column, msg_buffer);
+        snprintf(last_error_message, sizeof(last_error_message),
+                 "%s:%d:%d: %s", file, line, column, msg_buffer);
+    } else if (line > 0) {
+        fprintf(stderr, "Error at line %d: %s\n", line, msg_buffer);
+        snprintf(last_error_message, sizeof(last_error_message),
+                 "line %d: %s", line, msg_buffer);
+    } else {
+        fprintf(stderr, "Error: %s\n", msg_buffer);
+        snprintf(last_error_message, sizeof(last_error_message),
+                 "%s", msg_buffer);
+    }
+
     va_end(args);
 }
 
@@ -1110,4 +1478,112 @@ int is_input_port(LispObject *obj) {
 
 int is_output_port(LispObject *obj) {
     return is_port(obj) && obj->port.is_output;
+}
+
+/* ============================================================
+ * Essential #3: Memory Safety Functions
+ * ============================================================ */
+
+/* Safe string duplicate with null check */
+char *safe_strdup(const char *src) {
+    if (!src) return NULL;
+    size_t len = strlen(src);
+    if (len > MAX_STRING_LENGTH) {
+        lisp_error("String too long (%zu bytes, max %d)", len, MAX_STRING_LENGTH);
+        return NULL;
+    }
+    char *dst = malloc(len + 1);
+    if (!dst) {
+        lisp_error("Out of memory in safe_strdup");
+        return NULL;
+    }
+    memcpy(dst, src, len + 1);
+    return dst;
+}
+
+/* Safe string duplicate with length limit */
+char *safe_strndup(const char *src, size_t max_len) {
+    if (!src) return NULL;
+    size_t len = strnlen(src, max_len);
+    if (len > MAX_STRING_LENGTH) {
+        len = MAX_STRING_LENGTH;
+    }
+    char *dst = malloc(len + 1);
+    if (!dst) {
+        lisp_error("Out of memory in safe_strndup");
+        return NULL;
+    }
+    memcpy(dst, src, len);
+    dst[len] = '\0';
+    return dst;
+}
+
+/* Safe string concatenation */
+char *safe_strcat(const char *s1, const char *s2) {
+    if (!s1) s1 = "";
+    if (!s2) s2 = "";
+    size_t len1 = strlen(s1);
+    size_t len2 = strlen(s2);
+    if (len1 + len2 > MAX_STRING_LENGTH) {
+        lisp_error("Concatenated string too long");
+        return NULL;
+    }
+    char *result = malloc(len1 + len2 + 1);
+    if (!result) {
+        lisp_error("Out of memory in safe_strcat");
+        return NULL;
+    }
+    memcpy(result, s1, len1);
+    memcpy(result + len1, s2, len2 + 1);
+    return result;
+}
+
+/* ============================================================
+ * Essential #4: Input Validation Functions
+ * ============================================================ */
+
+/* Validate string length */
+int validate_string_length(size_t len) {
+    if (len > MAX_STRING_LENGTH) {
+        lisp_error("String length %zu exceeds maximum %d", len, MAX_STRING_LENGTH);
+        return 0;
+    }
+    return 1;
+}
+
+/* Validate list length */
+int validate_list_length(size_t len) {
+    if (len > MAX_LIST_LENGTH) {
+        lisp_error("List length %zu exceeds maximum %d", len, MAX_LIST_LENGTH);
+        return 0;
+    }
+    return 1;
+}
+
+/* Validate file path */
+int validate_file_path(const char *path) {
+    if (!path) {
+        lisp_error("File path is NULL");
+        return 0;
+    }
+    size_t len = strlen(path);
+    if (len > MAX_FILE_PATH) {
+        lisp_error("File path too long (%zu chars, max %d)", len, MAX_FILE_PATH);
+        return 0;
+    }
+    /* Check for directory traversal attempts */
+    if (strstr(path, "..")) {
+        lisp_error("Directory traversal not allowed in path");
+        return 0;
+    }
+    return 1;
+}
+
+/* Validate input size */
+int validate_input_size(size_t size) {
+    if (size > MAX_INPUT_SIZE) {
+        lisp_error("Input size %zu exceeds maximum %zu", size, (size_t)MAX_INPUT_SIZE);
+        return 0;
+    }
+    return 1;
 }

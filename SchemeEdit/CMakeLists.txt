@@ -21,6 +21,10 @@ set(SOURCES
     src/schemerunner.h
     src/schemehighlighter.cpp
     src/schemehighlighter.h
+    src/debugcontroller.cpp
+    src/debugcontroller.h
+    src/findreplacedialog.cpp
+    src/findreplacedialog.h
 )
 
 # Create executable

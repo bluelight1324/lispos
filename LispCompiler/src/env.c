@@ -132,3 +132,18 @@ Environment *env_create_global(void) {
 
     return global;
 }
+
+/* Get all bindings as an alist - for debugger */
+LispObject *env_get_all_bindings(Environment *env) {
+    LispObject *result = make_nil();
+
+    if (!env) return result;
+
+    /* Collect bindings from current scope only */
+    for (Binding *b = env->bindings; b != NULL; b = b->next) {
+        LispObject *pair = make_cons(b->symbol, b->value);
+        result = make_cons(pair, result);
+    }
+
+    return result;
+}

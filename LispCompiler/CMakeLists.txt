@@ -29,6 +29,7 @@ set(LISP_SOURCES
     src/eval.c
     src/primitives.c
     src/codegen.c
+    src/debug.c
 )
 
 # Main executable

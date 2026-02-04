@@ -14,3 +14,26 @@
  13. how to overcome the memory recursion. issue.doc.
  14. in LispCompiler\docs\MEMORY_RECURSION_SOLUTIONS.md implement quick fix.
  15. ho will you implement a first pass memory manager.doc it.
+ 16. implement. LispCompiler/docs/MEMORY_MANAGER_IMPLEMENTATION.md. doc [DONE]
+ 17. rerun the previus tests that the memory allocator is working good.doc [DONE].
+ 18.  do real world tests on the compiler. do factorial 100 computation. doc [DONE]
+ 19. improve the editor. make the editor useful for real world .  provide all examples with explanation in the menu. ready to be loaded in the editor.
+ provide doc. on how to use the editor. make the editor compile and link automatically. show the run
+ results in the editor. [DONE]
+ 19.1. how will you make it like rider.doc [DONE]
+ 19.2 using just phase1 in 19.1. make it look like rider all the way.doc it. implement a rider like menu and doc it.doc it. [DONE]
+ 20. how will you provide a debugger.doc [DONE]
+ 20.1. implement phases 1-3. in the debugger task above.doc it. [DONE]
+ 20.2 make the debugger run and do real world tests.doc it. [DONE]
+ 21. make it run in  vs code.use whatever is better for this. doc it. [DONE]
+ 21.1 ensure it will run in vscode with a prompt. doc it. [DONE]
+ 22. what else is needed bythe debugger to complete a full launch.doc it. [DONE]
+ 22.1 complete the debugger as in task 21. doc it. [DONE]
+ 23. test the application for real world use along with the debugger. doc it. [DONE]
+ 24.  what is required to make the liso compiler and editor ready for production and real world. doc it. [DONE]
+  25. what additional features need to be added for a better user experience. doc it. [DONE]
+  26. in task 24 doc what is absolutely necessary for a production real world env. doc it. [DONE]
+  26.1 what is abso. necessary  fo real world use in task 25. doc it. [DONE]
+  26.2 combine both task 26 and task 26.1 into 1 doc for what is abso. necessary for real world use. doc it. [DONE]
+  26.3 implement the The 10 Non-Negotiable Essentials in above task fo real world use. doc it. [DONE]
+  26.4 do a full and complete real world test of what was done above.doc it. [DONE]

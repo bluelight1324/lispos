@@ -1,0 +1,274 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Scheme",
+  "scopeName": "source.scheme",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#characters" },
+    { "include": "#numbers" },
+    { "include": "#booleans" },
+    { "include": "#keywords" },
+    { "include": "#special-forms" },
+    { "include": "#builtins" },
+    { "include": "#operators" },
+    { "include": "#definitions" },
+    { "include": "#symbols" },
+    { "include": "#parens" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.scheme",
+          "match": ";.*$"
+        },
+        {
+          "name": "comment.block.scheme",
+          "begin": "#\\|",
+          "end": "\\|#"
+        },
+        {
+          "name": "comment.datum.scheme",
+          "match": "#;\\s*\\([^)]*\\)"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.scheme",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.scheme",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "characters": {
+      "patterns": [
+        {
+          "name": "constant.character.scheme",
+          "match": "#\\\\(space|newline|tab|return|alarm|backspace|delete|escape|null|[a-zA-Z0-9])"
+        },
+        {
+          "name": "constant.character.scheme",
+          "match": "#\\\\x[0-9a-fA-F]+"
+        },
+        {
+          "name": "constant.character.scheme",
+          "match": "#\\\\."
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.complex.scheme",
+          "match": "[+-]?\\d+(\\.\\d+)?[+-]\\d+(\\.\\d+)?i\\b"
+        },
+        {
+          "name": "constant.numeric.rational.scheme",
+          "match": "[+-]?\\d+/\\d+\\b"
+        },
+        {
+          "name": "constant.numeric.float.scheme",
+          "match": "[+-]?\\d+\\.\\d+([eE][+-]?\\d+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.hexadecimal.scheme",
+          "match": "#x[0-9a-fA-F]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.binary.scheme",
+          "match": "#b[01]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.octal.scheme",
+          "match": "#o[0-7]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.decimal.scheme",
+          "match": "[+-]?\\d+\\b"
+        }
+      ]
+    },
+    "booleans": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.scheme",
+          "match": "#[tf]\\b"
+        },
+        {
+          "name": "constant.language.boolean.scheme",
+          "match": "#true\\b"
+        },
+        {
+          "name": "constant.language.boolean.scheme",
+          "match": "#false\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.scheme",
+          "match": "(?<=\\()\\s*(if|cond|case|when|unless|and|or|begin|do|delay|force)(?=\\s|\\))"
+        },
+        {
+          "name": "keyword.control.scheme",
+          "match": "(?<=\\()\\s*(let\\*?|letrec\\*?|let-values|let\\*-values|let-syntax|letrec-syntax)(?=\\s|\\))"
+        },
+        {
+          "name": "keyword.control.exception.scheme",
+          "match": "(?<=\\()\\s*(guard|raise|raise-continuable|with-exception-handler)(?=\\s|\\))"
+        },
+        {
+          "name": "keyword.control.scheme",
+          "match": "(?<=\\()\\s*(call-with-current-continuation|call/cc|dynamic-wind)(?=\\s|\\))"
+        }
+      ]
+    },
+    "special-forms": {
+      "patterns": [
+        {
+          "name": "keyword.other.special-form.scheme",
+          "match": "(?<=\\()\\s*(quote|quasiquote|unquote|unquote-splicing)(?=\\s|\\))"
+        },
+        {
+          "name": "keyword.other.special-form.scheme",
+          "match": "(?<=\\()\\s*(set!)(?=\\s)"
+        },
+        {
+          "name": "keyword.other.special-form.scheme",
+          "match": "(?<=\\()\\s*(lambda|λ)(?=\\s)"
+        },
+        {
+          "name": "keyword.other.import.scheme",
+          "match": "(?<=\\()\\s*(import|export|library|define-library)(?=\\s|\\))"
+        }
+      ]
+    },
+    "definitions": {
+      "patterns": [
+        {
+          "match": "(\\()\\s*(define)\\s+(\\()([^\\s\\)]+)",
+          "captures": {
+            "1": { "name": "punctuation.definition.list.begin.scheme" },
+            "2": { "name": "keyword.control.define.scheme" },
+            "3": { "name": "punctuation.definition.list.begin.scheme" },
+            "4": { "name": "entity.name.function.scheme" }
+          }
+        },
+        {
+          "match": "(\\()\\s*(define)\\s+([^\\s\\)]+)",
+          "captures": {
+            "1": { "name": "punctuation.definition.list.begin.scheme" },
+            "2": { "name": "keyword.control.define.scheme" },
+            "3": { "name": "variable.other.scheme" }
+          }
+        },
+        {
+          "match": "(\\()\\s*(define-syntax|define-record-type|define-values)\\s+([^\\s\\)]+)",
+          "captures": {
+            "1": { "name": "punctuation.definition.list.begin.scheme" },
+            "2": { "name": "keyword.control.define.scheme" },
+            "3": { "name": "entity.name.type.scheme" }
+          }
+        }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {
+          "name": "support.function.scheme",
+          "match": "(?<=\\()\\s*(car|cdr|cons|list|append|reverse|length|memq|memv|member|assq|assv|assoc)(?=\\s|\\))"
+        },
+        {
+          "name": "support.function.scheme",
+          "match": "(?<=\\()\\s*(c[ad]{2,4}r)(?=\\s|\\))"
+        },
+        {
+          "name": "support.function.scheme",
+          "match": "(?<=\\()\\s*(null\\?|pair\\?|list\\?|symbol\\?|number\\?|string\\?|char\\?|boolean\\?|procedure\\?|vector\\?|port\\?)(?=\\s|\\))"
+        },
+        {
+          "name": "support.function.scheme",
+          "match": "(?<=\\()\\s*(eq\\?|eqv\\?|equal\\?)(?=\\s|\\))"
+        },
+        {
+          "name": "support.function.scheme",
+          "match": "(?<=\\()\\s*(not|map|for-each|apply|eval)(?=\\s|\\))"
+        },
+        {
+          "name": "support.function.io.scheme",
+          "match": "(?<=\\()\\s*(display|write|newline|read|read-char|write-char|peek-char)(?=\\s|\\))"
+        },
+        {
+          "name": "support.function.io.scheme",
+          "match": "(?<=\\()\\s*(open-input-file|open-output-file|close-input-port|close-output-port|call-with-input-file|call-with-output-file)(?=\\s|\\))"
+        },
+        {
+          "name": "support.function.string.scheme",
+          "match": "(?<=\\()\\s*(string-append|string-length|string-ref|string-set!|substring|string->list|list->string|string->symbol|symbol->string|string->number|number->string)(?=\\s|\\))"
+        },
+        {
+          "name": "support.function.vector.scheme",
+          "match": "(?<=\\()\\s*(make-vector|vector|vector-length|vector-ref|vector-set!|vector->list|list->vector)(?=\\s|\\))"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arithmetic.scheme",
+          "match": "(?<=\\()\\s*(\\+|-|\\*|/|abs|quotient|remainder|modulo|gcd|lcm|expt|sqrt|floor|ceiling|truncate|round)(?=\\s|\\))"
+        },
+        {
+          "name": "keyword.operator.comparison.scheme",
+          "match": "(?<=\\()\\s*(=|<|>|<=|>=|zero\\?|positive\\?|negative\\?|odd\\?|even\\?|max|min)(?=\\s|\\))"
+        }
+      ]
+    },
+    "symbols": {
+      "patterns": [
+        {
+          "name": "constant.other.symbol.scheme",
+          "match": "'[^\\s\\(\\)\\[\\]\\{\\}\",'`]+"
+        },
+        {
+          "name": "variable.other.scheme",
+          "match": "[a-zA-Z!$%&*/:<=>?^_~][a-zA-Z0-9!$%&*/:<=>?^_~+\\-.@]*"
+        }
+      ]
+    },
+    "parens": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.list.begin.scheme",
+          "match": "\\("
+        },
+        {
+          "name": "punctuation.definition.list.end.scheme",
+          "match": "\\)"
+        },
+        {
+          "name": "punctuation.definition.vector.begin.scheme",
+          "match": "#\\("
+        },
+        {
+          "name": "punctuation.section.bracket.begin.scheme",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.section.bracket.end.scheme",
+          "match": "\\]"
+        }
+      ]
+    }
+  }
+}
