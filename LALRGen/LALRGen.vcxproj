@@ -1,0 +1,289 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="17.0">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <ProjectName>LALRGen</ProjectName>
+    <ProjectGuid>{EEAF0560-CC45-A034-0916-AD96D844E993}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>Dynamic</UseOfMfc>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>C:\SYSTEST\BIN\dbg\</OutDir>
+    <IntDir>C:\FILES\LALRGen\DBG\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;;$(INCLUDE);</IncludePath>
+    <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;c:\systest\bin;</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>c:\systest\bin</OutDir>
+    <IntDir>C:\FILES\LALRGen\DBG\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;;$(INCLUDE);</IncludePath>
+    <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;c:\systest\bin;</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>C:\FILES\LALRGen\REL\</OutDir>
+    <IntDir>C:\FILES\LALRGen\REL\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(RELLIB);</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>C:\FILES\LALRGen\REL\</OutDir>
+    <IntDir>C:\FILES\LALRGen\REL\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <MinimalRebuild>false</MinimalRebuild>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <PreprocessorDefinitions>LALRGEN;_CONSOLE;STRICT;_DEBUG;WIN32;LALRGEN;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>C:\FILES\LALRGen\DBG\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>C:\FILES\LALRGen\DBG\SYN.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>C:\FILES\LALRGen\DBG\</ObjectFileName>
+      <ProgramDataBaseFileName>C:\FILES\LALRGen\DBG\</ProgramDataBaseFileName>
+      <CompileAs>Default</CompileAs>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+    <AdditionalIncludeDirectories>..\..\Include;..\Sets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile>
+    <Midl>
+      <TypeLibraryName>C:\FILES\LALRGen\DBG\SYN.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>C:\FILES\LALRGen\DBG\SYN.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>C:\SYSTEST\BIN\dbg\LALRGen.EXE</OutputFile>
+      <AdditionalDependencies>%(AdditionalDependencies)(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PreprocessorDefinitions>LALRGEN;_CONSOLE;STRICT;_DEBUG;WIN32;LALRGEN;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>C:\FILES\LALRGen\DBG\</AssemblerListingLocation>
+      <BrowseInformation>true</BrowseInformation>
+      <PrecompiledHeaderOutputFile>C:\FILES\LALRGen\DBG\SYN.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>C:\FILES\LALRGen\DBG\</ObjectFileName>
+      <ProgramDataBaseFileName>C:\FILES\LALRGen\DBG\</ProgramDataBaseFileName>
+      <CompileAs>Default</CompileAs>
+    <AdditionalIncludeDirectories>..\..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile>
+    <Midl>
+      <TypeLibraryName>C:\FILES\LALRGen\DBG\SYN.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>C:\FILES\LALRGen\DBG\SYN.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>C:\SYSTEST\BIN\LALRGen.EXE</OutputFile>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MinSpace</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>NDBUG;WIN32;_CONSOLE;STRICT;RELEASE;LALRGEN;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>C:\FILES\LALRGen\REL\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>C:\FILES\LALRGen\REL\SYN.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>C:\FILES\LALRGen\REL\</ObjectFileName>
+      <ProgramDataBaseFileName>C:\FILES\LALRGen\REL\</ProgramDataBaseFileName>
+    <AdditionalIncludeDirectories>..\..\Include;..\Sets;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile>
+    <Midl>
+      <TypeLibraryName>C:\FILES\LALRGen\REL\SYN.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>C:\FILES\LALRGen\REL\SYN.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>C:\SYSTEST\BIN\Rel\LALRGen.exe</OutputFile>
+      <AdditionalDependencies>%(AdditionalDependencies)(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MinSpace</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>NDBUG;WIN32;_CONSOLE;STRICT;RELEASE;LALRGEN;NO_MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>C:\FILES\LALRGen\REL\</AssemblerListingLocation>
+      <PrecompiledHeaderOutputFile>C:\FILES\LALRGen\REL\SYN.pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>C:\FILES\LALRGen\REL\</ObjectFileName>
+      <ProgramDataBaseFileName>C:\FILES\LALRGen\REL\</ProgramDataBaseFileName>
+    <AdditionalIncludeDirectories>..\..\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories></ClCompile>
+    <Midl>
+      <TypeLibraryName>C:\FILES\LALRGen\REL\SYN.tlb</TypeLibraryName>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Bscmake>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <OutputFile>C:\FILES\LALRGen\REL\SYN.bsc</OutputFile>
+    </Bscmake>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Sets\virtualmem.cpp" />
+    <ClCompile Include="..\Sets\SetLegacy.cpp" />
+    <ClCompile Include="ACTS.c">
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</PreprocessToFile>
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</PreprocessToFile>
+    </ClCompile>
+    <ClCompile Include="ASSORT.c" />
+    <ClCompile Include="FERR.c" />
+    <ClCompile Include="FIRST.c" />
+    <ClCompile Include="HASH.c" />
+    <ClCompile Include="HASHADD.c" />
+    <ClCompile Include="INPUT.c" />
+    <ClCompile Include="LEXYY.c" />
+    <ClCompile Include="MAIN.c" />
+    <ClCompile Include="ONFERR.c" />
+    <ClCompile Include="PRINTV.c" />
+    <ClCompile Include="PRNT.c" />
+    <ClCompile Include="SIGNON.c" />
+    <ClCompile Include="STOK.c" />
+    <ClCompile Include="YYCODE.c" />
+    <ClCompile Include="YYDOLLAR.c" />
+    <ClCompile Include="YYDRIVER.c" />
+    <ClCompile Include="YYOUT.c" />
+    <ClCompile Include="YYPATCH.c" />
+    <ClCompile Include="YYSTATE.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Include\STDPAR.h" />
+    <ClInclude Include="DEBUG.H" />
+    <ClInclude Include="DEF.H" />
+    <ClInclude Include="HASH.H" />
+    <ClInclude Include="HASPARS.H" />
+    <ClInclude Include="LLOUT.H" />
+    <ClInclude Include="SET.H" />
+    <ClInclude Include="STACK.H" />
+    <ClInclude Include="..\..\Include\SYNMAIN.H" />
+    <ClInclude Include="test.h" />
+    <ClInclude Include="YYOUT.H" />
+    <ClInclude Include="YYSTACK.H" />
+    <ClInclude Include="..\..\Include\yystate.h" />
+    <ClInclude Include="YYSTP.H" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="lalrgen.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

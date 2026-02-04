@@ -1,0 +1,1707 @@
+/* yystate.c-- Universal Constants and LR(1) Items   Pg. 411 */
+
+#include <windows.h>
+//#include <standard.h>
+#include <tchar.h>
+#include <stdio.h>
+#include "debug.h"
+#include <tchar.h>
+#include "set.h"
+#include "hash.h"
+#include "yystate.h"
+//#include "yystp.h"
+#include <virtualmem.h>    /* memory-management functions */
+
+#pragma warning(disable:4018)
+
+/*---------------------------------------------------------------------*/
+ extern   void error(_TINT fatal,_TCHAR *fmt, ... );
+ extern   void output(_TCHAR *fmt, ...);
+ extern   void comment(FILE *fp,_TCHAR **argv );
+ extern  _TINT ptab(HASH_TAB  *,void (* print)(),void *,_TINT );
+ //extern   _TINT  ptab(HASH_TAB *tabp,void (* )(SYMBOL *,PRODUCTION **),void *param,_TINT sort);
+ //extern   _TINT  ptab(HASH_TAB *tabp,void (* )(STATE *,void*),void *param,_TINT sort);
+ extern   void document_to(FILE *fp );
+ extern   void document(_TCHAR *fmt, ... );
+ extern   void  assort(void **base,_TINT nel,_TINT elsize,_TINT   (*cmp)(ITEM **,ITEM **) );
+ //extern   HASH_TAB *maketab(unsigned maxsym,_TINT (*hash_function)(void *arg),_TINT (*cmp_function)(const void *arg1,const  void *arg2));
+  extern HASH_TAB *maketab(_TINT, _TINT (*hash_function)(),int (*cmp_function)() );
+/*  HASH_TAB *maketab(unsigned ,unsigned (*hash_function)(STATE *),
+                   _TINT (*cmp_function)(STATE *,STATE *)
+				  );*/
+
+ extern   _TINT  first_rhs(SET *dest,SYMBOL **rhs,_TINT len );
+ //extern   void   pset(SET *set, _TINT (*output_routine)(_TCHAR **,_TCHAR *,_TINT),void *param );
+ //extern  void     pset (SET*, _TINT (*)(), void*  );
+ extern void    pset(SET *set, _TINT(*output_routine)(void *, void *, _TINT), void *param);
+ extern   long NcNum;
+ static  void  addreductions(STATE *,void *);
+ static  _TCHAR  *stritem(ITEM *item, _TINT lookaheads);
+ /* ------------------------------------------------------------------------------ */
+								    	 /* For statistics only:             */
+static _TINT  Nitems          = 0;        /* number of LR(1) items            */
+static _TINT  Npairs          = 0;        /* # of pairs in output tables      */
+static _TINT  Ntab_entries    = 0;        /* number of transitions in tables  */
+static _TINT  Shift_reduce    = 0;        /* number of shift/reduce conflicts */
+static _TINT  Reduce_reduce   = 0;        /* number of reduce/reduce conflicts */
+
+
+
+/*--------------------------------------------------------------------*/
+/* Function Prototypes  */   
+static  void  pstate_stdout(STATE *);
+static  _TINT  lr(STATE *);
+static  void reductions();
+static  void print_tab(ACT **,_TCHAR *,_TCHAR *,_TINT );
+static  void print_reductions();
+static  _TINT  closure(STATE *,ITEM **,_TINT );
+static _TINT   kclosure(STATE *,ITEM **,_TINT ,_TINT );
+static _TINT   move_eps(STATE *,ITEM **,_TINT );
+static  void pclosure(STATE *,ITEM **,_TINT );
+static  _TINT  merge_lookaheads(ITEM **,ITEM **,_TINT );
+static _TINT   do_close(ITEM *,ITEM **,_TINT *,_TINT *);
+static ITEM  *in_closure_items(PRODUCTION *,ITEM **,_TINT );
+static _TINT   add_lookahead(SET *,SET *);
+static void  reduce_one_item(STATE *,ITEM *);
+static void  pstate(STATE *);
+static  void  mkprod(SYMBOL *,PRODUCTION **);
+/*   #include "yystate.h"*/
+
+/* Parse-Table Memory Management                                                 */
+
+#define CHUNK          128         /* New() gets this many structures at once */
+
+static void  *newact()
+{
+   /*  Return an area of memory that can be used as either an ACT or GOTO.
+    *  These objects cannot be freed.
+	*/
+
+
+	static ACT   *eheap   = (ACT *) 0;
+	static ACT   *heap    = (ACT *) 1;
+
+	if( heap >= eheap )
+	{
+	    if( !(heap = (ACT *) AllocMem( sizeof(ACT)  * CHUNK) ))
+		   /* malloc is being used instead of malloc originally */
+		    error( FATAL, _T("No memory for action or goto\n") );
+
+			eheap =heap + CHUNK ;
+    }
+	++Ntab_entries ;
+	return heap++ ;
+}
+
+/* ------------------------------------------------------------------------------ */
+
+static  ACT  *p_action(_TINT state,_TINT input_sym )
+{
+/* Return a pointer to the existing ACT structure representing the indicated
+ * state and input symbol ( or NULL if no such symbol exists).
+ */
+
+ ACT *p;
+
+ for ( p = Actions[state]; p ; p = p-> next)
+ if( p->sym == input_sym)
+ return p;
+
+ return NULL;
+}
+
+/* ----------------------------------------------------------------------------- */
+/*C*/
+static void  add_action(_TINT state,_TINT input_sym,_TINT do_this )
+{
+     /* Add an element to the action part of the parse table. The cell is indexed
+	  * by the state number and input symbol, and holds do_this.
+	  */
+
+	ACT  *p;
+
+	if( Verbose  > 1)
+	    printf("Adding shift  or  reduce action from state %d: %d on %s\n",
+						 state, do_this, Terms[ input_sym ]->name);
+
+	p              = (ACT *) newact();
+	p->sym         = input_sym ;
+	p->do_this     = do_this ;
+	p->next        = Actions[state];
+	Actions[state] = p;
+}
+
+
+/* ------------------------------------------------------------------------------ */
+
+static GOTO  *p_goto(_TINT state,_TINT nonterminal )
+{
+   /* Return a pointer to the existing GOTO structure representing the
+    * indicated state and nonterminal( or NULL if no such symbol exists). The
+	* value used for the nonterminal is the one in the symbol table; it is
+	* adjusted down ( so that the smallest nonterminal has the value 0)
+	* before doing the table look up, however.
+	*/
+
+
+GOTO  *p;
+
+nonterminal = ADJ_VAL( nonterminal );
+
+for( p = Gotos[ state ]; p ; p = p->next )
+     if( p->sym == nonterminal )
+	     return p;
+
+ return NULL;
+}
+
+/* ------------------------------------------------------------------------------ */
+
+static  void   add_goto( _TINT state,_TINT nonterminal,_TINT go_here )
+
+{
+    /*  Add an element to the goto part of the parse table, the cell is indexed by
+	 *  current state number and nonterminal value, and holds go_here. Note that
+	 *  the input nonterminal value is the one that appears in the symbol table. It
+	 * is adjusted downwards ( so that the smallest nonterminal will have the value 
+	 * 0 ) before being inserted into the table, however.
+	 */
+
+     GOTO            *p;
+	 _TINT             unadjusted;             /* Original value of nonterminal   */
+
+	 unadjusted    = nonterminal;
+	 nonterminal   = ADJ_VAL( nonterminal );
+
+	 if( Verbose > 1)
+		printf( "Adding goto from state %d to %d on %s\n",
+						  state, go_here, Terms[unadjusted]->name );
+	 p            = (GOTO *) newact();
+	 p->sym       =  nonterminal;
+	 p->do_this   =  go_here;
+	 p->next      = Gotos[state];
+	 Gotos[state] = p;
+}
+
+
+/* LR State Memory Management - Data Structures                                  */
+
+ static   HASH_TAB    *States           = NULL;    /*LR(1) ststes               */
+ static   _TINT          Nstates          = 0;       /* NUmber of States          */
+
+ #define MAX_UNFINISHED  MAXPROD			/* Old value 2048 */
+			/* Old value 2048 */
+
+ typedef struct    tnode
+ {
+    STATE        *state;
+	struct tnode *left, *right;
+ }TNODE;
+
+
+ static TNODE    Heap[ MAX_UNFINISHED ];  /* Source of all TNODEs               */
+ static TNODE    *Next_allocate  = Heap ; /* Ptr to next node to allocate       */
+
+ static TNODE    *Available     =  NULL;  /* Free list of available nodes       */
+					                       /* linked list of TNODES. p->left     */
+					                       /* is used as the link                */
+ static TNODE    *Unfinished    = NULL;   /* Tree of unfinished states          */
+ 
+ static ITEM     **State_items;           /* Used to pass info to state_cmp     */
+ static _TINT      State_nitems;            /*              "                     */
+ static _TINT      Sort_by_number = 0;      /*               "                    */
+ 
+ #define  NEW       0                      /* Possible return values from        */
+ #define  UNCLOSED  1                      /* newstate()                         */
+ #define  CLOSED    2   
+
+
+ /* LR-State Memory Management -- Subroutines                                    */
+ 
+ static  _TINT      newstate(ITEM **items,_TINT nitems,STATE **statep )
+ {
+    STATE   *state;
+	STATE   *existing;
+	//_TINT     state_cmp() ;
+
+
+	if( nitems  > MAXKERNEL )
+	    error( FATAL, _T("Kernel of new state %d  too large\n"), Nstates);
+
+
+	State_items   =  items;       /* set up parameters for state_cmp             */
+	State_nitems   =  nitems;      /* and state_hash                             */
+
+	if( existing =(STATE *)findsym( States, NULL ) )
+	{
+	    /* State exists; by not setting "state" to NULL, we'll recycle           */
+		/* the newly allocated state on the next call                            */
+
+		*statep = existing;
+		if( Verbose > 1)
+		{
+		    printf("Using existing state (%sclosed): ",
+						      existing->closed ? "" :"un" );
+			pstate_stdout( existing );
+		}
+		return existing->closed ? CLOSED :UNCLOSED ;
+	}
+	else
+	{
+	  if ( Nstates >= MAXSTATE )
+	       error(FATAL, _T("Too many LALR(1)  states\n"));
+
+	  if( !(state = (STATE *) newsym(sizeof(STATE)) ))
+	      error( FATAL, _T("Insufficent memory for states\n") );
+
+	  memcpy( state->kernel_items, items, nitems *sizeof(ITEM*) );
+	  state->nkitems  =  nitems;
+	  state->neitems  =  0;
+	  state->closed   =  0;
+	  state->num      =  Nstates++ ;
+	  *statep         =  state;
+	  addsym( States, state );
+
+	  if( Verbose > 1 )
+	  {
+	     printf("Forming new state:");
+		 pstate_stdout( state );
+	  }
+
+	  return        NEW;
+   }
+}
+
+/*--------------------------------------------------------------------------------*
+ * Page 419
+ */
+
+static  void  add_unfinished(STATE *state )
+{
+    TNODE  **parent, *root;
+	_TINT    cmp;
+
+	parent  = &Unfinished;
+	root    = Unfinished;
+	while( root )                               /* look for the node in the tree */
+	{
+	    if( (cmp = state->num - root->state->num) == 0 )
+		     break;
+		else
+		{
+		    parent = (cmp < 0) ? &root->left : &root->right ;
+			root   = (cmp < 0) ? root->left  : root->right ;
+	    }
+	}
+
+	if( !root )                         /* Node isn't in tree          */
+	{   if( Available )                 /* Allocate a new node and     */
+	    {                               /* put it into the tree        */
+		    *parent   = Available ;     /* Use node from Available     */
+			Available =     Available->left;/* list if possible  otherwise */
+	    }                               /* get the node from the heap  */
+		else
+		{
+		   if( Next_allocate >= &Heap[ MAX_UNFINISHED] )
+		       error(FATAL,_T("Internal: No memory for unfinished state\n"));
+			   *parent = Next_allocate++;
+		}
+			 
+		(*parent)->state = state;        /* initialize the node  */
+		(*parent)->left  =(*parent)->right = NULL;
+	}
+}
+
+/*-----------------------------------------------------------*/
+
+ static STATE  *get_unfinished()
+ {
+   /* Returns a pointer to the next unfinished state and deletes that
+    * state from the unfinished tree. Returns NULL if the tree 
+	* is empty
+    */
+
+	TNODE    *root;
+	TNODE    **parent;
+
+	if( !Unfinished )
+	    return NULL;
+
+		parent = &Unfinished;      /* find leftmost node */
+		if( root = Unfinished )
+		{
+		    while( root->left )
+			{
+			  parent = &root->left;
+			  root   = root->left;
+			}
+
+	    }
+
+		*parent      = root->right ;      /* Unlink node from the tree */
+		root->left   = Available;         /* Put it into the free list */
+		Available    = root;
+
+		return root-> state;
+}
+
+
+/* State Comparision functions  Pg. 421                     */
+
+
+static  int     state_cmp(STATE *newact,STATE *tab_node )
+/* STATE    *newact;          Pointer  to new node (ignored
+			               if Sort_by_number is false). 
+   STATE    *tab_node;     Pointer to existing node     */
+{
+    /* Compare two states as described in the text. Return a 
+	 * number representing  the relative weight of the states,
+	 * or 0 of the states are equivalent.
+	 */
+
+ 
+  ITEM   **tab_item ;   /* Array of items for existing state  */
+  ITEM   **item     ;   /* Array of items for new state       */
+  int      nitem      ;   /* size of   " - MUST be signed for loop termination! */
+  int      cmp        ;   /* comparison result - signed for subtraction */
+
+  if( Sort_by_number )
+      return( newact->num - tab_node-> num );
+
+  if( cmp = State_nitems - tab_node-> nkitems )/* state with */
+      return cmp;                              /* largest no. of items is larger */
+      
+      
+  nitem     = State_nitems;
+  item      = State_items;
+  tab_item  = tab_node->kernel_items;
+  
+  for(; --nitem >=0 ; ++tab_item, ++item )
+  {
+      if( cmp = (*item)->prod_num - (*tab_item)->prod_num )
+	  return cmp;
+	  
+       if( cmp = (*item)->dot_posn - (*tab_item)->dot_posn )
+	  return cmp;
+   }
+   
+   return 0;                         /* States are equivalent */
+   
+}  
+
+
+static  _TINT state_hash(STATE *sym )
+/* STATE   *sym;             ignored   */
+{
+  /* Hash function for STATEs.Sum together production numbers and dot positions
+   * of the kernel items.
+   */
+
+   ITEM   **items  ;   /* Array of items for new state     */
+   int      nitems   ;   /* Size of     " - MUST be signed for loop termination! */
+   _TINT    total    ;
+
+   items   = State_items  ;
+   nitems  = State_nitems;
+   total   = 0;
+
+   for(; --nitems >= 0; ++items )
+       total += (*items)->prod_num  + (*items)->dot_posn;
+
+	   return  total;
+}
+
+
+/*  ITEM Management  Page 422                                  */
+
+ITEM   *Recycled_items  = NULL;
+
+static ITEM   *newitem(PRODUCTION *production )
+
+{
+   ITEM         *item;
+
+   if( Recycled_items )
+   {
+       item = Recycled_items ;
+	   Recycled_items = (ITEM *) Recycled_items->prod;
+	   CLEAR(item->lookaheads );
+   }
+   else
+   {
+      if( !(item = (ITEM *) AllocMem( sizeof(ITEM) )) )
+	      error( FATAL, _T("Insufficent memory for all LR(1) items\n") );
+
+		  item->lookaheads = newset() ;
+    }
+
+	++Nitems;
+	item->prod          = production ;
+	item->prod_num      = production->num ;
+	item->dot_posn      = 0;
+	item->right_of_dot  = production->rhs[0] ;
+	return item;
+}
+
+	  
+static void    freeitem(ITEM *item )
+{
+    --Nitems;
+	item->prod = (PRODUCTION *) Recycled_items ;
+	Recycled_items = item;
+}
+
+
+static  void   free_recycled_items()
+{
+  /* empty the recycling heap, freeing all memory used by items there */
+
+  ITEM *p;
+
+  while( p = Recycled_items )
+  {
+      Recycled_items = (ITEM *) Recycled_items->prod;
+	  FreeMem(p);
+   }
+}
+
+
+static  void movedot(ITEM *item )
+{
+   /* Moves the dot one position to the right and updates the 
+    * right_of_dot  symbol
+	*/
+
+	item->right_of_dot = ( item->prod->rhs )[ ++item->dot_posn ];
+}
+
+
+static _TINT   item_cmp(ITEM **item1p,ITEM **item2p )
+{
+   /* Return the relative weight of two items, 0 if they're equivalent */
+
+   _TINT rval;
+   ITEM  *item1  = *item1p;
+   ITEM  *item2  = *item2p;
+
+   if( !(rval = RIGHT_OF_DOT(item1) - RIGHT_OF_DOT(item2)) )
+       if( !(rval = item1->prod_num - item2->prod_num) )
+	   return item1->dot_posn  - item2->dot_posn;
+
+	   return  rval; 
+}
+
+/*-----------------------------------------------------------*
+ * High-Level, Table-Generation Function
+ * Page 423
+ */
+
+   void    make_parse_tables()
+ {
+   /* Prints an LALR(1) transition matrix for the grammar currently
+    * represented in the symbol table.
+	*/
+
+	ITEM        *item;
+	STATE       *state;
+	PRODUCTION  *start_prod;
+	void        mkstates();
+	//_TINT         state_cmp();
+	FILE        *fp,*old_output;
+	_TCHAR        strA[32],strG[32];
+
+
+ 	/* Make data structures used to produce the table, and create an initial
+	 * LR(1) item containing the start production and the end-of-input marker
+	 * as a lookahead symbol.
+	 */
+
+	 States = maketab( MAXPROD/4,state_hash,state_cmp );
+
+
+	 if( !Goal_symbol )
+	      error(FATAL, _T("No Goal symbol.\n") );
+	start_prod = Goal_symbol->productions ;
+
+	if( start_prod->next )
+	    error(FATAL, _T("Start symbol must have only one right-hand side.\n"));
+
+	item = newitem( start_prod );      /* make item for start production */
+	ADD( item->lookaheads, _EOI_ );      /* FOLLOW(S) = ($)     */
+
+	newstate( &item, 1, &state );
+					  /* add shifts and gotos to the table */
+	if( lr( state ) )
+	{
+	    if( Verbose )
+		    printf("Adding reductions:\n");
+
+		reductions();  /* add the reductions */
+
+		if( Verbose )
+		    printf("Creating tables:\n" );
+
+		if( !Make_yyoutab )          /* Tables go in yyout.c  */
+		{	/*
+			 Note : Some table names have been changed 
+			 Yyg ->	__SynG
+			 Yya -> __SynA
+		     */
+			_stprintf(strA,_T("%s%d"),_T("__SynAction"),NcNum);
+			_stprintf(strG,_T("%s%d"),_T("__SynGoto"),NcNum);
+
+		    print_tab( Actions,_T("__SynA"),strA, 1);
+			print_tab( Gotos,  _T("__SynG"),strG, 1);
+		}
+		else
+		{
+		    if( !(fp = fopen(TAB_FILE, "w")) )
+			{
+			   error( NONFATAL, _T("Can't open "), _T(TAB_FILE) , _T("ignoring -T\n"));
+			   /*
+			     Note : Some table names have been changed 
+			     Yyg ->	__SynG
+			     Yya -> __SynA
+		       */
+
+			_stprintf(strA,_T("%s%d"),_T("__SynAction"),NcNum);
+			_stprintf(strG,_T("%s%d"),_T("__SynGoto"),NcNum);
+
+			print_tab( Actions, _T("__SynA"), strA, 1);
+			print_tab( Gotos,   _T("__SynG"),strG, 1);
+			}
+			else
+			{
+			  output(_T( "extern _TINT  *__SynAction%d[];  /* in yyoutab.c */\n"),NcNum );
+			  output( _T("extern _TINT  *__SynGoto%d[];  /* in yyoutab.c */\n"),NcNum );
+
+			  old_output = Output;
+			  Output     = fp;
+
+			  fprintf(fp, "#include <stdio.h>\n" );
+			  fprintf(fp, "typedef short int;\n" );
+			  fprintf(fp, "#define  static  %s\n",
+						   Public ? "/* empty */" : "static" );
+
+	          /*
+			    Note : Some table names have been changed 
+			    Yyg ->	__SynG
+			    Yya -> __SynA
+		      */
+
+			  _stprintf(strA,_T("%s%d"),_T("__SynAction"),NcNum);
+			  _stprintf(strG,_T("%s%d"),_T("__SynGoto"),NcNum);
+			  
+			  print_tab( Actions, _T("__SynA"),strA, 0 );
+			  print_tab( Gotos,   _T("__SynG"), strG, 0);
+
+			  fclose( fp );
+			  Output = old_output;
+			}
+		}
+		print_reductions(); 
+	}
+}
+
+
+
+static  _TINT lr(STATE *cur_state )
+{
+   /* Make LALR(1) state machine. The shifts and gotos are done here,
+	* the reductions are done elsewhere. Return the number of states.
+	*/
+
+	ITEM   **p;
+	ITEM   **first_item;
+	ITEM   **closure_items;     /* Original : ITEM   *closure_items[ MAXCLOSE ]*/
+	STATE  *next;               /* Next State                 */
+	_TINT    isnew;               /* Next state is a new state  */
+	int      nclose;              /* Number of items in closure_items - MUST be signed! */
+	int      nitems;              /* #items with same symbol to right of dot - MUST be signed! */
+	_TINT    val;                 /* Value of symbol to right of dot         */
+	SYMBOL *sym;                /* ACtual symbol to right of dot           */
+	_TINT    nlr  =0;             /* Nstates +nlr  == number of LR(1) states */
+
+
+	closure_items = 
+	               (ITEM **)AllocMem( MAXCLOSE * sizeof(ITEM)
+				   );
+	add_unfinished( cur_state );
+
+	while( cur_state = get_unfinished() )
+	{
+	    if( Verbose > 1)
+			printf( "Next pass...working on state %d\n", cur_state->num );
+
+		/* closure()  adds normal closure items to closure_items array.
+		 * kclose()   adds to that set all items in the kernel that have  
+		 * outgoing   transitions(i.e whose dots aren't at the far right).
+		 * assort()   sorts the closure items by the symbol to the right of the 
+		 *            dot.Epsilon transitions will sort to the head of the
+		 *            list , followed by transitions on nonterminals
+		 *            followed by transitions on terminals
+		 * move_eps() moves the epsilon transitions into the closure kernel set.
+		 */
+		 
+		 nclose = closure  (cur_state, closure_items, MAXCLOSE     );
+		 nclose = kclosure (cur_state, closure_items, MAXCLOSE, nclose );
+		 if( nclose )
+		 {
+		     assort((void **)closure_items, nclose, sizeof(ITEM*),item_cmp);
+			 nitems  = move_eps( cur_state, closure_items, nclose );
+			 p       = closure_items + nitems;
+			 nclose -= nitems;
+
+			 if( Verbose > 1)
+			     pclosure( cur_state, p, nclose );
+		 }
+
+		 /* All of the remaining items have at least one symbol to the
+		  * right of the dot.
+		  */
+
+		while( nclose > 0 )
+		{
+		    first_item = p;
+			sym        =(*first_item)->right_of_dot ;
+			val        = sym->val;
+
+	    /* Collect all items with the same symbol to the right of the dot.
+		 * On exiting the loop, nitems will hold the number of these items
+		 * and p will point at the first nonmatching item. Finally nclose is
+		 * decremented by nitems. items = 0;
+		 */
+
+		 nitems  = 0;
+		 do
+		 {
+		    movedot( *p++ );
+			++nitems;
+		 } while( --nclose > 0 && RIGHT_OF_DOT(*p) == val );
+
+		 /* (1) newstate() gets the next state. It returns NEW IF THE STATE
+		  * DIDN'T EXIST PREVIOUSLY , CLOSED if LR(0) closure has been 
+		  * performed on the state, UNCLOSED otherwise.
+		  * (2) add a transition from the current state to the next state.
+		  * (3) if it's a brand-new state, add it to the unfinished list
+		  * (4) otherwise merge the lookaheads created by the current closure
+		  *     operation with the ones already in the state.
+		  * (5) If the merge operation added lookaheads to the existing set,
+		  *  add it to the unfinished list.
+		  */
+
+		  isnew = newstate( first_item, nitems, &next );  /* 1 */
+
+		  if( !cur_state-> closed )
+		  {
+		    if( ISTERM( sym ) )
+			    add_action ( cur_state->num, val, next->num ); /*2 */
+			else
+			    add_goto   ( cur_state->num, val, next->num );
+		  }
+
+		  if( isnew == NEW )
+		      add_unfinished( next );                         /* 3*/   
+		  else
+		  {
+		      if( merge_lookaheads( next->kernel_items, first_item, nitems) )
+			  {
+			      add_unfinished( next );
+				  ++nlr;
+			  }
+			  while( --nitems >= 0 )
+			      freeitem( *first_item++ );
+		  }
+		  //#ifdef _DEBUG
+		  D(fprintf( stderr, "\rLR:%-3d  LALR:%-3d", Nstates + nlr, Nstates );)
+		  //#endif
+	  }
+	  cur_state->closed = 1;
+   }
+
+   free_recycled_items();
+
+   if( Verbose )
+       fprintf(stderr, "states, %d items, %d shift and goto transitions\n",Nitems, Ntab_entries );
+   
+   return Nstates;
+}
+
+/*------------------------------------------------------------ */
+
+
+static  _TINT    merge_lookaheads(ITEM **dst_items,ITEM **src_items,_TINT nitems_unsigned )
+{
+  /* This routine is called if newststate has determined that a state having the
+   * specified items already exists. If this is the case, the item list in the
+   * STATE nad the current item list will be identical in all respects except
+   * lookaheads. This routine merges the lookaheads of the input items
+   * (src_items) to the items already in the state ( dst_items). 0 is returned
+   * if nothing was done ( all lookaheads in the new state are already in the
+   * existing state), 1 otherwise. It's an internal error if the item's don't
+   * match
+   */
+
+   int did_something = 0;
+   int nitems = (int)nitems_unsigned;   /* MUST be signed for loop termination! */
+
+   while( --nitems >=0 )
+   {
+       if(    (*dst_items)->prod        != (*src_items)->prod
+	       || (*dst_items)->dot_posn    != (*src_items)->dot_posn )
+	   {
+	       error(FATAL,_T("INTERNAL [merge_lookaheads], item mismatch\n") );
+	   }
+
+	   if( !subset( (*dst_items)->lookaheads, (*src_items)->lookaheads) )
+	   {
+	       ++did_something;
+		   UNION( (*dst_items)->lookaheads, (*src_items)->lookaheads );
+	   }
+
+	   ++dst_items;
+	   ++src_items;
+   }
+
+   return did_something;
+}
+
+/*------------------------------------------------------------*/
+
+static _TINT   move_eps(STATE *cur_state,ITEM **closure_items,_TINT nclose_unsigned )
+{
+   /* Move the epsilon items from the closure_items set to the kernel of the
+    * current state. If epsilon items already exist in the current state,
+	* just merge the lookaheads. Note that , because the closure items were
+	* sorted to partition them, the epsilon productions in the closure_items
+	* set will be in the same order as those already in the kernel. Return
+	*  the number of items that were moved.
+	*/
+
+	ITEM **eps_items, **p;
+	int    nitems, moved ;   /* MUST be signed for loop termination! */
+	int    nclose = (int)nclose_unsigned;
+
+    eps_items  = cur_state->epsilon_items;
+	nitems     = cur_state->neitems;
+	moved      = 0;
+
+	for( p = closure_items; (*p)->prod->rhs_len == 0 && --nclose >=0; )
+	{
+		if( ++moved > MAXEPSILON )
+		    error(FATAL, _T("Too many epsilon productions in state %d\n"),
+							    cur_state->num );
+
+	if( nitems )
+		    UNION( (*eps_items++)->lookaheads, (*p++)->lookaheads );
+		else
+		    *eps_items++ = *p++;
+	}
+
+	if( moved )
+	    cur_state->neitems = moved;
+
+	return moved;
+}
+
+/*------------------------------------------------------------*/
+
+
+static _TINT   kclosure(STATE *kernel,ITEM **closure_items,_TINT maxitems,_TINT nclose )
+/* STATE *kernel;            Kernel state  to close        
+   ITEM  **closure_items;    Array into which closure items are put 
+   _TINT  maxitems;            Size of the closure_items[] array    
+   _TINT  nclose;              # of items already in set             */
+{
+    /* Adds to the closure set those items from the kernel that will shift to
+	 * new states (i.e the items with dots somewhere other than the far right)
+	 */
+
+	int         nitems;   /* MUST be signed for loop termination! */
+	ITEM      *item, **itemp, *citem;
+
+	closure_items += nclose;          /* Correct for existing items    */
+	maxitems      -= nclose;
+
+	itemp  = kernel->kernel_items;
+	nitems = kernel->nkitems;
+
+	while( --nitems >=0 )
+	{
+	    item = *itemp++;
+
+		if( item->right_of_dot )
+		{
+		    citem               = newitem( item->prod );
+			citem->prod         = item->prod;
+			citem->dot_posn     = item->dot_posn;
+			citem->right_of_dot = item->right_of_dot ;
+			citem->lookaheads   = dupset( item->lookaheads );
+
+			if( --maxitems < 0 )
+			    error(FATAL,_T( "Too many closure items in state %d\n"),kernel->num );
+
+			*closure_items++ = citem;
+			++nclose;
+		}
+	}
+	return nclose;
+}
+
+/*-------------------------------------------------------------
+ * page 429
+ */
+
+ static  _TINT  closure(STATE *kernel,ITEM *closure_items[],_TINT maxitems )
+ /* STATE *kernel;              Kernel state to close          
+    ITEM  *closure_items[];     Array into which closure items re put 
+    _TINT   maxitems;             Size of the closure_items[] array      */
+ {
+
+    /* Do LR(1) closure on the kernel items array in the input STATE. When
+	 * finished, closure_items[] will hold the new items. The logic is:
+	 *
+	 * (1) for ( each kernel item )
+	 *           do LR(1) closure on that item.
+	 * (2) while( items were added in the previous step or are added below )
+	 *          do LR(1) closure on the items that were added.
+	 */
+
+	 int    i;                        /* MUST be signed for loop termination! */
+	 int    nclose         = 0;    /* Number of closure items */
+	 int    did_something  = 0;
+	 ITEM **p                        = kernel->kernel_items;
+
+	 for( i = kernel->nkitems; --i >= 0 ;)
+	 {                                                   /* (1) */
+	     did_something |= do_close( *p++, closure_items, &nclose, &maxitems );
+	 }
+
+	 while( did_something )
+	 {
+	     did_something = 0;
+		 p = closure_items;
+		 for( i = nclose ; --i >= 0 ; )
+		      did_something |= do_close( *p++, closure_items, &nclose, &maxitems);
+	 }
+
+	 return nclose;
+}
+
+/*-----------------------------------------------------------*/
+
+static _TINT  do_close(ITEM *item,ITEM *closure_items[],_TINT *nitems,_TINT *maxitems )
+/* ITEM    *item;
+   ITEM    *closure_items[];  (output) Array of items added by closure process 
+   _TINT     *nitems;           (input)  # of items currently in closure_items[] 
+            			      (output) # of items in closure_items after processing 
+   _TINT     *maxitems;        (input) max # of items that can be added               
+			                 *(output) input adjusted for newly added items      */
+
+{
+    /* Workhorse function  used by closure(). Performs LR(1) closure on the
+	 * input item ([A->b.Cd, e] add [C->x, FIRST(de)]). The new items are added
+	 * to the closure_items[] array and *nitems and *maxitems are modified to
+	 * reflect the number of items in the closure set. Return 1 if do_close()
+	 * did anything, 0 if no items were added (as will be the case if the dot
+	 * is at the far right of the production or the symbol to the right of the 
+	 * dot is a terminal).
+	 */
+
+	 _TINT         did_something = 0;
+	 _TINT         rhs_is_nullable;
+	 PRODUCTION  *prod;
+	 ITEM        *close_item;
+	 SET         *closure_set;
+	 SYMBOL      **symp;
+
+	 if( !item->right_of_dot )
+	     return 0;
+
+     if( !ISNONTERM( item->right_of_dot) )
+	     return 0;
+
+	 closure_set = newset();
+
+	 /* The symbol to the  right of the dot is a nonterminal. Do the following:
+	  *
+	  * (1) for( every production attached to that nonterminal )
+	  * (2)      if( the current production is not already in the set of
+	  *                                                           closure items)
+	  * (3)       add it;
+	  * (4)      if ( the d in [A->b.Cd, e] doesn't exist )
+	  * (5)            add e to the lookaheads in the closure production
+	  *          else
+	  * (6)          The d in [A->b.Cd, e] does exist, compute FIRST(de) and add
+	  *              it to the lookaheads for the current item if necessary.
+	  */
+							   /* (1) */
+     
+	 for( prod = item->right_of_dot->productions; prod ;prod = prod->next )
+	 { 
+
+                                                /* 2*/
+ 	     if( !(close_item = in_closure_items(prod, closure_items, *nitems)))
+		 {
+		     if( --(*maxitems) <= 0 )
+			     error(FATAL, _T("LR(1) Closure set too large\n") );
+										  /* 3*/
+			closure_items[ (*nitems)++ ] = close_item = newitem( prod );
+			++did_something;
+		 }
+
+
+		 if( !*(symp = & ( item->prod->rhs [ item->dot_posn + 1])) )  /* 4 */
+		 {
+		     did_something |= add_lookahead( close_item->lookaheads,     /* 5*/
+									  item->lookaheads );
+
+		 }
+		 else
+		 {
+		     truncate( closure_set );                   /* 6  */
+
+			 rhs_is_nullable = first_rhs( closure_set, symp,item->prod->rhs_len - item->dot_posn -1 );
+						 
+
+			 REMOVE( closure_set, EPSILON );
+
+			 if( rhs_is_nullable )
+			     UNION( closure_set, item->lookaheads );
+				 did_something |= add_lookahead(close_item->lookaheads, closure_set);
+		  }
+		}
+
+		delset( closure_set );
+		return did_something;
+}
+
+/*-----------------------------------------------------------*/
+
+static ITEM   *in_closure_items(PRODUCTION *production,ITEM **closure_item,_TINT nitems_unsigned)
+{
+   /* If the indicated production is in the closure_items already, return a
+    * pointer to the existing item, otherwise return NULL.
+    */
+    int nitems = (int)nitems_unsigned;   /* MUST be signed for loop termination! */
+
+    for(; --nitems >=0 ; ++closure_item )
+	if( (*closure_item)->prod == production )
+	     return *closure_item;
+
+    return NULL;
+ }         
+
+/*-------------------------------------------------------------*/
+
+static _TINT    add_lookahead(SET *dst,SET *src )
+{
+   /* Merge the lookaheads in the src and dst sets. If the original src
+    * set was empty, or if it was already a subset of the destination set,
+	* return 0, otherwise return 1.
+	*/
+
+	if( !IS_EMPTY( src ) && !subset( dst, src ) )
+	{
+	    UNION( dst, src );
+		return 1;
+	}
+
+	return 0;
+}
+
+
+/* Adding reductions to tables   Pg. 431                    */
+
+static  void  reductions()      
+{
+   /* Do the reductions. If there's memory, sort the table by state number */
+   /* first so that yyout.doc will look nice                               */
+
+   //void  addreductions();                     /* below  */
+
+   Sort_by_number  = 1;
+
+   if( !ptab( States,addreductions, NULL, 1) )
+       ptab( States,addreductions, NULL, 0 );
+}       
+
+/*------------------------------------------------------------*/
+
+static  void  addreductions(STATE *state,void *junk)
+{
+   /* This routine is called for each state. It adds the reductions using the
+    * disambiguating rules described in the text, and the prints the state to
+	* yyout.doc if Verbose is true. I don't like the idea of doing two things
+	* at once, but it makes for nicer output because the error messages will
+	* be next to the state that caused the error.
+	*/
+
+	int             i;   /* MUST be signed for loop termination! */
+	ITEM          **item_p;
+
+	for( i= state->nkitems, item_p = state->kernel_items; --i>=0; ++item_p )
+	     reduce_one_item( state, *item_p );
+
+	for( i= state->neitems, item_p = state->epsilon_items; --i>=0; ++item_p )
+	     reduce_one_item( state, *item_p );
+
+    if( Verbose )
+	{
+	    pstate( state );
+
+		if(state->num % 10 == 0 )
+		   fprintf( stderr, "%d\r", state->num );
+	 }
+}
+
+/*------------------------------------------------------------*/
+
+static void  reduce_one_item(STATE *state,ITEM *item )
+/* ITEM    *item;              Reduce on this item 
+   STATE   *state;             from this state     */
+{
+
+
+    _TINT          token;               /* Current lookahead   */
+	_TINT          pprec;               /* Precedence of production */
+	_TINT          tprec;               /* Precedence of token       */
+	_TINT          assoc;               /* Associativity of token   */
+	_TINT          reduce_by;
+	_TINT          resolved;            /* True if conflict can be resolved */
+	ACT          *ap;
+   
+    if( item->right_of_dot )          /* No reduction required */
+	       return;
+
+    pprec = item->prod->prec;         /* precedence of entire production */
+
+	for( next_member(NULL); 
+	    (token = next_member(item->lookaheads)) >= 0 ;
+	   )
+	{
+	    tprec = Precedence[token].level ;      /* precedence of lookahead  */
+		assoc = Precedence[token].assoc ;      /* symbol       */
+
+
+		if(!(ap = p_action(state->num, token )) )   /* No conflicts     */
+		{
+		  add_action( state->num, token, -(item->prod_num) );
+		}
+		else if( ap->do_this <=0 )
+		{
+		  /* Resolve a reduce/reduce conflict in favor of the production */
+		  /* with the smaller number. Print a warning.                   */
+
+		  ++Reduce_reduce;
+
+		  reduce_by   = min( -(ap->do_this), item->prod_num );
+		  ap->do_this = -reduce_by;
+
+		  error( WARNING,_T( "state %2d: reduce/reduce conflict ")
+			       _T("%d/%d on %s (choose %d).\n"),
+						      state->num,
+								  -(ap->do_this), item->prod_num,
+								  token  ? Terms[token]->name: _T("<_EOI_>"),
+								  reduce_by                             );
+	   }
+	   else                           /* Shift/reduce conflict      */
+	   {
+	      if( resolved = (pprec  && tprec) )
+		      if( tprec < pprec || (pprec == tprec && assoc !='r') )
+			      ap->do_this = -( item->prod_num );
+
+		  if( Verbose > 1 ||  !resolved )
+		  {
+		      ++Shift_reduce;
+			  error( WARNING, _T("State %2d: shift/reduce conflict %s/%d")
+				       _T(" (choose  %s) %s\n"),
+						       state->num,
+							   Terms[token]->name,
+							   item->prod_num,
+							   ap->do_this < 0 ? _T("reduce")     : _T("shift"),
+							   resolved        ? _T("(resolved)") : _T("")
+							   );
+	   }
+	  }
+   }
+}
+
+
+
+/* Statistics Functions   Pg. 433                            */
+//#ifdef _DEBUG
+   void lr_stats(FILE *fp )
+ {
+    /* Print out various statistics about the table_making process */
+
+	fprintf(fp, "%4d       LALR(1) states\n",              Nstates );
+	fprintf(fp, "%4d       items\n",                       Nitems  );
+	fprintf(fp, "%4d       nonerror transitions in tables\n", Ntab_entries );
+	fprintf(fp, "%4d/%-4d  unfinished items\n", (int)(Next_allocate - Heap),
+								   MAX_UNFINISHED);
+    fprintf(fp, "%4zu      bytes required for LALR(1) transition matrix\n",
+				    (2 * sizeof(_TCHAR*) * Nstates)  /* index arrays */
+								+ Nstates                      /* count fields */
+								+ (Npairs * sizeof(short))     /* pairs        */
+		   );
+	fprintf(fp, "\n");
+ }
+//#endif
+/*--------------------------------------------------------------------------------*/
+//#ifdef _DEBUG
+  _TINT lr_conflicts(FILE *fp )
+{
+     /* print out statistics for the inadequate states and return the number of
+      * conflicts
+      */
+
+      D(fprintf(fp, "%4d      shift/reduce  conflicts\n", Shift_reduce  );)
+      D(fprintf(fp, "%4d      reduce/reduce conflicts\n", Reduce_reduce );)
+      return Shift_reduce  + Reduce_reduce;
+}
+
+//#endif
+
+/* Print Functions    Pg. 434                                                   */
+
+#define    MAX_TOK_PER_LINE        10
+static  _TINT Tokens_printed;       /* Controls number of lookaheads printed  */
+				                   /* on a single line of yyout.doc         */
+
+static  _TINT sprint_tok(_TCHAR **bp,_TCHAR *format,_TINT arg )
+/* _TCHAR      **bp;
+   _TCHAR      *format; not used here, but supplied by pset()   
+   _TINT       arg;		                    				  */
+
+{
+     /* Print one nonterminal symbol to a buffer maintained by the
+      * calling routine and update the calling routine's pointer.
+      */
+
+
+     if     ( arg == -1        ) *bp += _stprintf( *bp,  _T("null ")                 );
+     else if( arg ==  -2       ) *bp += _stprintf( *bp,  _T("empty ")                );
+     else if( arg == _EOI_     ) *bp += _stprintf( *bp,  _T("$ ")                    );
+     else if( arg == EPSILON   ) *bp += _stprintf( *bp,  _T("")                      );
+     else                        *bp += _stprintf( *bp,  _T("%s "), Terms[arg]->name );
+
+     if( ++Tokens_printed >= MAX_TOK_PER_LINE )
+     {
+	  *bp += _stprintf(*bp, _T("\n\t\t"));
+	  Tokens_printed = 0;
+     }
+
+ return 1; /* This line added */
+}
+
+static  _TCHAR  *stritem( ITEM *item,_TINT lookaheads )
+{
+    /* Return a pointer to a string that holds a representation of an item. The
+     * lookaheads are printed too if "lookaheads" is true or Verbbose is > 1
+     * (-V was specified  on the command line).
+     */
+
+     static  _TCHAR buf[ MAXOBUF * 2]; /* Original :static  _TCHAR buf[ MAXOBUF * 2];*/
+     _TCHAR         *bp;
+     _TINT          i;
+
+	 
+     bp    = buf;
+     bp   += _stprintf( bp, _T("%s->"), item->prod->lhs->name );
+
+     if( item->prod->rhs_len  <= 0 )
+	 bp += _stprintf( bp, _T("<epsilon>. ") );
+     else
+     {
+	for( i = 0; i < item->prod->rhs_len; ++i )
+	{
+	    if( i == item->dot_posn )
+		*bp++    = '.' ;
+
+	    bp  += _stprintf(bp, _T(" %s"), item->prod->rhs[i]->name );
+	}
+
+	if( i == item->dot_posn )
+	    *bp++  = _T('.') ;
+     }
+
+
+     if( lookaheads  || Verbose >1 )
+     {
+	 bp += _stprintf( bp, _T(" (production %d, precedence %d)\n\t\t["),
+					  item->prod->num, item->prod->prec );
+	 Tokens_printed  = 0;
+	 pset( item->lookaheads,sprint_tok, &bp );
+	 *bp++ = ']' ;
+     }
+
+     if( bp - buf >= (MAXOBUF * 2) )
+	 error(FATAL, _T("Internal [stritem], buffer overflow\n") );
+
+     *bp = '\0' ;
+     return buf;
+}
+
+/*--------------------------------------------------------------------------------*/
+
+ static  void      pstate(STATE *state )
+ {
+    /* Print one row of the parse  table in human_readable form  yyout.doc
+     * (stderr if _v is specified ).
+     */
+
+     _TINT    i;
+     ITEM   **item;
+     ACT    *p;
+
+     document( _T("State %d:\n"), state->num );
+
+     /*--------------------------------------------------------------------------*/
+     /* Print the kernel and epsilon items for the current state                 */
+
+     for( i=state->nkitems, item=state->kernel_items ; --i >= 0 ; ++item )
+	 document(_T("    %s\n"), stritem(*item, (*item)->right_of_dot == 0 ));
+
+     for( i=state->neitems, item=state->epsilon_items ; --i >= 0 ; ++item )
+	  document(_T("    %s\n"), stritem(*item, 1) );
+
+     document( _T("\n") );
+
+     /*---------------------------------------------------------------------------*/
+     /* Print out the next-state transitions , first the actions                  */
+     /* then the gotos                                                            */
+     
+     for( i= 0; i < MINTERM + USED_TERMS; ++i )
+     {
+	if( p = p_action( state->num, i ) )
+	{
+	   if( p->do_this == 0 )
+	   {
+	       if( p->sym == _EOI_ )
+		   document(_T( "    Accept on end of input\n") );
+	       else
+		  error( FATAL, _T("INTERNAL: state %d, Illegal accept"), state->num);
+	    }
+	    else if( p->do_this < 0 )
+		 document( _T("   Reduce by %d on %s\n"),-(p->do_this), Terms[p->sym]->name );
+
+	    else 
+		 document( _T("    Shift to %d on %s\n"), p->do_this, Terms[p->sym]->name );
+
+       }
+    }
+
+    for( i = MINNONTERM; i < MINNONTERM + USED_NONTERMS; i++ )
+	 if( p = p_goto(state->num, i) )
+	     document( _T("    Goto %d on %s\n"), p->do_this, Terms[i]->name );
+
+    document(_T("\n"));
+}
+
+
+static  void  pstate_stdout(STATE *state )
+{
+     document_to( stdout );
+     pstate( state );
+     document_to( NULL );
+}
+
+/*-------------------------------------------------------------------------------*/
+
+
+static  void pclosure(STATE *kernel,ITEM **closure_items,_TINT nitems )
+{
+   printf("\n%d items in Closure of ", nitems );
+   pstate_stdout( kernel );
+
+   if( nitems > 0 )
+   {
+      printf( "  -----closure items:----\n" );
+      while( --nitems  >=0 )
+	  printf( "    %s\n", stritem( *closure_items++, 0) );
+    }
+}
+
+
+
+static  void      make_yy_lhs(PRODUCTION **prodtab )
+{
+   #ifdef _DEBUG
+   static _TCHAR   *text[] =
+   {
+      _T("The __SynLhs array is used for reductions.It is indexed by production"),
+      _T("number and holds the associated left-hand side adjusted so that the"),
+      _T("number can be used as an index into __SynGoto."),
+      NULL
+    };
+	#endif
+
+    PRODUCTION   *prod;
+    _TINT          i;
+
+    #ifdef _DEBUG
+     comment( Output, text );
+	#endif
+    
+    output(_T("const int __SynLhs[%d] =\n{\n"), Num_productions );
+
+    for( i = 0; i < Num_productions ; ++i )
+    {
+	  prod = *prodtab++;
+	 /* Don't output comments in a release version */
+	 #ifdef _DEBUG
+      output(_T("\t/* %3d */\t%d"), prod->num, ADJ_VAL( prod->lhs->val ) );
+	 #else
+	  output(_T("\t%d"),ADJ_VAL( prod->lhs->val ) );
+	 #endif
+	 if( i != Num_productions-1 )
+	     output(_T(","));
+
+	 if( i % 3 == 2 || i == Num_productions-1 )     /* use three columns    */
+	     output(_T( "\n") );
+    }
+    output(_T("};\n"));
+}
+
+/*-------------------------------------------------------------------------------*/
+
+static   void   make_yy_reduce(PRODUCTION **prodtab )
+{
+    #ifdef _DEBUG
+    static  _TCHAR   *text[] =
+    {
+       _T("The __SynReduce[] array is indexed by production number and holds"),
+       _T("the number of symbols on the right-hand side of the production"),
+       NULL
+    };
+	#endif
+
+    PRODUCTION   *prod;
+    _TINT          i;
+
+	#ifdef _DEBUG
+     comment( Output, text );
+	#endif
+    
+    output(_T("__declspec(dllexport) int __SynReduce%d[%d] =\n{\n"),NcNum,Num_productions );
+
+    for( i = 0; i < Num_productions; ++i )
+    {
+       prod = *prodtab++;
+	   /* Don't output comments in a release version */
+	   #ifdef _DEBUG
+        output(_T("\t/* %3d */\t%d"), prod->num, prod->rhs_len );
+	   #else
+		output(_T("\t%d"), prod->rhs_len );
+	   #endif
+
+       if( i != Num_productions -1 )
+	   output(_T(","));
+
+       if( i % 3 == 2 || i == Num_productions -1 )    /* use three columns */
+	   output(_T("\n") );
+    }
+    output(_T("};\n\n\n\n}\n"));
+}
+
+/*-------------------------------------------------------------------------------*/
+
+#ifdef _DEBUG
+static void  make_yy_slhs(PRODUCTION **prodtab )
+{
+   static  _TCHAR   *text[] =
+   {
+      _T("Yy_slhs[] is  a debugging version of Yy_lhs[]. It is indexed by"),
+      _T("production number and evaluates to a string representing the"),
+      _T("left-hand side of the production"),
+      NULL
+    };
+
+    PRODUCTION *prod;
+    _TINT         i;
+
+	#ifdef _DEBUG
+     comment ( Output, text );
+	#endif
+    
+    output  ( _T("_TCHAR  *Yy_slhs[%d] =\n{\n"), Num_productions );
+
+    for( i = Num_productions; --i >= 0 ; )
+    {
+	prod = *prodtab++;
+	output(_T("\t/* %3d */\t\"%s\""), prod->num, prod->lhs->name );
+	output( i != 0 ? _T(",\n") : _T("\n") );
+    }
+    output(_T("};\n"));
+}
+
+
+
+static void make_yy_srhs(PRODUCTION **prodtab )
+{
+   
+    static _TCHAR   *text[] =
+    {
+     _T("Yy_srhs[] is also used for debugging. It is indexed by production"),
+     _T("number and evaluates to a string representing the right-hand side of")
+     _T("the production."),
+     NULL
+    };
+   
+
+   PRODUCTION  *prod;
+   _TINT         i, j;
+
+   comment( Output, text );
+   
+   
+   output( _T("char  *Yy_srhs[%d] =\n{\n"), Num_productions );
+
+   for( i = Num_productions; --i >= 0 ; )
+   {
+       prod = *prodtab++;
+       output(_T("\t/* %3d */\t\""), prod->num );
+
+       for( j = 0; j < prod->rhs_len ; ++j )
+       {
+	   output(_T("%s"), prod->rhs[j]->name );
+	   if( j != prod->rhs_len -1 )
+	       outc( _T(' ') );
+	}
+
+	output( i != 0 ? _T("\",\n") : _T("\"\n") );
+    }
+    output(_T("};\n"));
+}
+#endif
+/*-------------------------------------------------------------------------------
+ * The following routines generate compressed parse tables. There's currently
+ * no way to do uncompressed tables. The default transition is the error
+ * transition.
+ */
+
+
+ static  void   print_reductions()
+ {
+   /* Output the various tables needed to do reductions */
+
+    PRODUCTION  **prodtab;
+
+ if(!(prodtab = 
+       (PRODUCTION**) AllocMem(sizeof(PRODUCTION*) *
+	    Num_productions))
+     )
+       error(FATAL,_T("Not enough memory to output  LALR(1) reduction tables\n"));
+
+   /* ptab( Symtab,(void (*)(void *,void *))mkprod, prodtab, 0 );*/
+      ptab( Symtab,mkprod,(PRODUCTION  **)prodtab, 0 );
+
+   make_yy_lhs    ((PRODUCTION  **)prodtab);
+   make_yy_reduce ( prodtab );
+
+   #ifdef  _DEBUG
+   output(_T("#ifdef YYDEBUG\n"));
+
+   make_yy_slhs   ( prodtab );
+   make_yy_srhs   ( prodtab );
+
+   output(_T("#endif\n"));
+   #endif
+   
+   FreeMem( prodtab );
+}
+
+/*------------------------------------------------------------------------------*/
+
+static  void  mkprod(SYMBOL *sym,PRODUCTION **prodtab )
+{
+    PRODUCTION  *p;
+
+    if( ISNONTERM(sym) )
+	for( p= sym->productions ; p ; p = p->next )
+	     prodtab[ p->num ] = p;
+}
+
+/*-------------------------------------------------------------------------------*/
+
+static  void    print_tab(ACT **table,_TCHAR *row_name,_TCHAR *col_name,_TINT make_private )
+/* ACT      **table;
+ _TCHAR     *row_name;    Name to use for the row arrays                        
+ _TCHAR     *col_name;    Name to use for the row-pointers array                
+ _TINT      make_private; Make index table private ( rows always private)       */
+
+{
+    /* Output the action or goto table */
+
+    _TINT        i,j,k;
+    ACT        *ele, **elep;  /* table element and pointer to same               */
+    ACT        *e, **p;
+    _TINT        count;         /* # of transitions from this state always > 0     */
+    _TINT        column;
+    SET        *redundant = newset();   /* Mark redundant rows                   */
+
+    #ifdef _DEBUG
+    static _TCHAR *act_text[] =
+    {
+/*       "The __SynAction table is action part of the LALR(1) transition",
+       "matrix. It's compressed and can be accessed using  the yy_next()",
+       "subroutine, declared below.",
+       "",
+       "             __SynA000[]={   3,   5,3   ,    2,2   ,   1,1   );",
+       "  state number---+        |    | |",
+       "  number of pairs in list-+    | |",
+       "  input symbol (terminal)------+ |",
+       "  action-------------------------+",
+       "",
+       "  action = yy_next( __SynAction, cur_state, lookahead_symbol );",
+       "",
+       "       action <  0   -- Reduce by production n,  n == -action.",
+       "       action == 0   -- Accept. ,(i.e Reduce by production 0.)",
+       "       action >  0   -- Shift to state n,  n == action.",
+       "       action == YYF -- error.",*/
+       NULL
+    };
+
+    static  _TCHAR  *goto_text[] =
+    {
+/*       "The  __SynGoto  table is goto part of the LALR(1) transition matrix",
+       "It's compressed and can be accessed using the yy_next() subroutine,",
+       "declared below."
+       "",
+       " nonterminal = Yy_lhs[ production number by which we just reduced ]",
+       "",
+       "               Yyg000[]={   3,   5,3   ,   2,2  ,   1,1   };",
+       " uncovered state-+          |    | |",
+       " number of pairs in list----+    | |",
+       " nonterminal---------------------+ |",
+       " goto this state-------------------+",
+       ""
+       " goto_state = yy_next( __SynGoto, cur_state, nonterminal );",*/
+       NULL
+    };
+	
+	 comment( Output, table == Actions ? act_text : goto_text );
+	#endif
+
+    /*---------------------------------------------------------------------------
+     * Modify the matrix so that, if a duplicate rows exists, only one
+     * copy of it is kept around. The extra rows are marked as such by setting
+     * a bit in the "redundant" set. (The memory used for the chains is just
+     * discarded.) The redundant table element is made to point at the row
+     * that it duplicates.
+     */
+
+     for( elep = table, i =0; i< Nstates ; ++elep, ++i )
+     {
+	if( MEMBER( redundant,i ) )
+	    continue;
+
+	for( p=elep+1, j=i ; ++j < Nstates ; ++p )
+	{
+	 if( MEMBER( redundant, j) )
+	     continue;
+
+	 ele = *elep;          /* pointer to template chain                     */
+	 e   = *p;             /* chain to compare against template             */
+
+	 if( !e || !ele )      /* either or both strings have no elements       */
+	     continue;
+
+	 for( ; ele && e ; ele=ele->next, e=e->next )
+	      if( (ele->do_this != e->do_this) || (ele->sym != e->sym) )
+		  break;
+
+	 if( !e  && !ele )
+	 {
+	    /* Then the chains are the same. Mark the chain being compared
+	     * as redundant, and modify table[j] to hold a pointer to the
+	     * template pointer
+	     */
+
+	     ADD( redundant, j );
+	     table[j] = (ACT *)  elep;
+	}
+    }
+}
+
+/* -------------------------------------------------------------------------------
+ * Output the row arrays
+ */
+
+ for( elep = table, i = 0; i < Nstates ; ++elep, ++i )
+ {
+     if( !*elep  || MEMBER(redundant, i) )
+	 continue;
+		     /* Count the number of transitions from this state */
+     
+     count = 0;
+     for( ele = *elep ; ele ; ele = ele->next )
+	  ++count;
+
+     output(_T("const int %s%03d[]={%2d,"),row_name, elep-table,count);
+								      /*}*/
+
+     column = 0;
+     for( ele = *elep ; ele ; ele = ele->next )
+     {
+	 ++Npairs;
+	 output( _T("%2d,%-2d"), ele->sym, ele->do_this );
+
+	 if( ++column != count )
+	     outc( _T(',') );
+
+	 if( column % 8 == 0 )
+	     output(_T("\n                 "));
+      }
+								 /* {   */
+      output( _T("};\n") );
+}
+
+ /* -----------------------------------------------------------------------------
+  * Output the index array
+  */
+
+  if( make_private )
+      output( _T("\nconst __declspec(dllexport) int *%s[%d] =\n"), col_name, Nstates );
+  else
+      output( _T("\nconst __declspec(dllexport) int *%s[%d] =\n"), col_name, Nstates );
+
+  #ifdef _DEBUG
+   output( _T("{\n/*   0 */  ") );
+  #else
+   output( _T("{\n") );
+  #endif
+								       /* }  */
+  for( elep = table, i = 0 ; i < Nstates ; ++i, ++elep )
+  {
+       if( MEMBER(redundant, i) )          /* original   */
+	{
+	  output(_T("%s%03d"), row_name,  (ACT **)(*elep) - table );  
+	} 
+      else
+	  output( *elep ? _T("%s%03d") : _T("0"), row_name, i );
+
+      if( i != Nstates-1 )
+	  output(_T(", ") );
+
+      /* Dont output comments in a release version 
+	   * i is being assigned to k and k is being incremented,because
+	   * of the need to get alignment in the output file
+	   */
+	  #ifdef _DEBUG
+       k = i;
+	   ++k;
+	   if( (k % 6) == 0)
+	    output(_T("\n/* %3d */ "), i+1);
+	  #else
+	   k = i;
+	   ++k;
+	   if( (k % 6) == 0)
+	    output("\n");
+	  #endif
+  }
+								     /* { */
+  delset( redundant );                             /* Mark redundant rows */
+  output(_T("\n};\n\n\n"));
+}

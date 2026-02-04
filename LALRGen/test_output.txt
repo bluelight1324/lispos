@@ -1,0 +1,394 @@
+Running LALRGen on simple.y... 
+DEBUG: LALRGen starting, argc=2
+DEBUG: signon() done
+DEBUG: parse_args() done
+DEBUG: Calling init_acts()
+DEBUG: init_acts() done, calling file_header()
+DEBUG: file_header() done
+DEBUG: calling nows()
+DEBUG: nows() done, calling yyparse()
+DEBUG: yyparse() entered
+DEBUG: yyparse() calling yy_init_stack()
+DEBUG: yyparse() calling yy_init_occs()
+DEBUG: yyparse() calling yy_nextoken()
+DEBUG: yyparse() yy_nextoken() returned 2
+DEBUG: yyparse() entering main loop
+DEBUG: loop iteration, separator_count=0
+DEBUG: calling yy_next(), yylookahead=2
+DEBUG: yy_next() cur_state=0, inp=2
+DEBUG: yy_next() table[0] = 00007FF64831F070
+DEBUG: yy_next() i=10
+DEBUG: yy_next returned act_num=1
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=1
+DEBUG: taking SHIFT branch
+DEBUG: loop iteration, separator_count=0
+DEBUG: calling yy_next(), yylookahead=18
+DEBUG: yy_next() cur_state=1, inp=18
+DEBUG: yy_next() table[1] = 00007FF64831F070
+DEBUG: yy_next() i=10
+DEBUG: yy_next returned act_num=7
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=1
+DEBUG: taking SHIFT branch
+DEBUG: loop iteration, separator_count=0
+DEBUG: calling yy_next(), yylookahead=7
+DEBUG: yy_next() cur_state=7, inp=7
+DEBUG: yy_next() table[7] = 00007FF64831F2E0
+DEBUG: yy_next() i=12
+DEBUG: yy_next returned act_num=-61
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=61 (negated from -61)
+DEBUG: REDUCE: production=61, rhs_len=0
+DEBUG: REDUCE: calling yy_act(61)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(61, 0)
+DEBUG: yy_next() cur_state=7, inp=35
+DEBUG: yy_next() table[7] = 00007FF648320398
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=18
+DEBUG: loop iteration, separator_count=0
+DEBUG: calling yy_next(), yylookahead=7
+DEBUG: yy_next() cur_state=18, inp=7
+DEBUG: yy_next() table[18] = 00007FF64831F520
+DEBUG: yy_next() i=12
+DEBUG: yy_next returned act_num=34
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=1
+DEBUG: taking SHIFT branch
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=14
+DEBUG: yy_next() cur_state=34, inp=14
+DEBUG: yy_next() table[34] = 00007FF64831F9D0
+DEBUG: yy_next() i=12
+DEBUG: yy_next returned act_num=-51
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=51 (negated from -51)
+DEBUG: REDUCE: production=51, rhs_len=0
+DEBUG: REDUCE: calling yy_act(51)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(51, 0)
+DEBUG: yy_next() cur_state=34, inp=25
+DEBUG: yy_next() table[34] = 00007FF648320508
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=50
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=14
+DEBUG: yy_next() cur_state=50, inp=14
+DEBUG: yy_next() table[50] = 00007FF64831F520
+DEBUG: yy_next() i=12
+DEBUG: yy_next returned act_num=-18
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=18 (negated from -18)
+DEBUG: REDUCE: production=18, rhs_len=0
+DEBUG: REDUCE: calling yy_act(18)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(18, 0)
+DEBUG: yy_next() cur_state=50, inp=6
+DEBUG: yy_next() table[50] = 00007FF6483205E0
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=66
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=14
+DEBUG: yy_next() cur_state=66, inp=14
+DEBUG: yy_next() table[66] = 00007FF64831FDF0
+DEBUG: yy_next() i=10
+DEBUG: yy_next returned act_num=-16
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=16 (negated from -16)
+DEBUG: REDUCE: production=16, rhs_len=3
+DEBUG: REDUCE: calling yy_act(16)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(16, 3)
+DEBUG: yy_next() cur_state=18, inp=6
+DEBUG: yy_next() table[18] = 00007FF648320418
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=35
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=14
+DEBUG: yy_next() cur_state=35, inp=14
+DEBUG: yy_next() table[35] = 00007FF64831FA40
+DEBUG: yy_next() i=10
+DEBUG: yy_next returned act_num=-60
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=60 (negated from -60)
+DEBUG: REDUCE: production=60, rhs_len=0
+DEBUG: REDUCE: calling yy_act(60)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(60, 0)
+DEBUG: yy_next() cur_state=35, inp=34
+DEBUG: yy_next() table[35] = 00007FF648320518
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=51
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=14
+DEBUG: yy_next() cur_state=51, inp=14
+DEBUG: yy_next() table[51] = 00007FF64831F070
+DEBUG: yy_next() i=10
+DEBUG: yy_next returned act_num=-12
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=12 (negated from -12)
+DEBUG: REDUCE: production=12, rhs_len=0
+DEBUG: REDUCE: calling yy_act(12)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(12, 0)
+DEBUG: yy_next() cur_state=51, inp=1
+DEBUG: yy_next() table[51] = 00007FF6483205F0
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=67
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=14
+DEBUG: yy_next() cur_state=67, inp=14
+DEBUG: yy_next() table[67] = 00007FF64831FE48
+DEBUG: yy_next() i=1
+DEBUG: yy_next returned act_num=-6
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=6 (negated from -6)
+DEBUG: REDUCE: production=6, rhs_len=5
+DEBUG: REDUCE: calling yy_act(6)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(6, 5)
+DEBUG: yy_next() cur_state=1, inp=1
+DEBUG: yy_next() table[1] = 00007FF648320338
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=11
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=14
+DEBUG: yy_next() cur_state=11, inp=14
+DEBUG: yy_next() table[11] = 00007FF64831F3D8
+DEBUG: yy_next() i=1
+DEBUG: yy_next returned act_num=-10
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=10 (negated from -10)
+DEBUG: REDUCE: production=10, rhs_len=2
+DEBUG: REDUCE: calling yy_act(10)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(10, 2)
+DEBUG: yy_next() cur_state=0, inp=1
+DEBUG: yy_next() table[0] = 00007FF648320328
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=10
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=14
+DEBUG: yy_next() cur_state=10, inp=14
+DEBUG: yy_next() table[10] = 00007FF64831F3C8
+DEBUG: yy_next() i=1
+DEBUG: yy_next returned act_num=23
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=1
+DEBUG: taking SHIFT branch
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=7
+DEBUG: yy_next() cur_state=23, inp=7
+DEBUG: yy_next() table[23] = 00007FF64831F728
+DEBUG: yy_next() i=4
+DEBUG: yy_next returned act_num=-64
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=64 (negated from -64)
+DEBUG: REDUCE: production=64, rhs_len=0
+DEBUG: REDUCE: calling yy_act(64)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(64, 0)
+DEBUG: yy_next() cur_state=23, inp=38
+DEBUG: yy_next() table[23] = 00007FF648320468
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=40
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=7
+DEBUG: yy_next() cur_state=40, inp=7
+DEBUG: yy_next() table[40] = 00007FF64831FA98
+DEBUG: yy_next() i=4
+DEBUG: yy_next returned act_num=57
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=1
+DEBUG: taking SHIFT branch
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=3
+DEBUG: yy_next() cur_state=57, inp=3
+DEBUG: yy_next() table[57] = 00007FF64831FC78
+DEBUG: yy_next() i=1
+DEBUG: yy_next returned act_num=-66
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=66 (negated from -66)
+DEBUG: REDUCE: production=66, rhs_len=0
+DEBUG: REDUCE: calling yy_act(66)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(66, 0)
+DEBUG: yy_next() cur_state=57, inp=40
+DEBUG: yy_next() table[57] = 00007FF648320610
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=69
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=3
+DEBUG: yy_next() cur_state=69, inp=3
+DEBUG: yy_next() table[69] = 00007FF64831FE68
+DEBUG: yy_next() i=1
+DEBUG: yy_next returned act_num=74
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=1
+DEBUG: taking SHIFT branch
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=7
+DEBUG: yy_next() cur_state=74, inp=7
+DEBUG: yy_next() table[74] = 00007FF64831FEB0
+DEBUG: yy_next() i=7
+DEBUG: yy_next returned act_num=-52
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=52 (negated from -52)
+DEBUG: REDUCE: production=52, rhs_len=0
+DEBUG: REDUCE: calling yy_act(52)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(52, 0)
+DEBUG: yy_next() cur_state=74, inp=26
+DEBUG: yy_next() table[74] = 00007FF648320668
+DEBUG: yy_next() i=2
+DEBUG: REDUCE: yy_reduce done, stack top=77
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=7
+DEBUG: yy_next() cur_state=77, inp=7
+DEBUG: yy_next() table[77] = 00007FF64831FF28
+DEBUG: yy_next() i=7
+DEBUG: yy_next returned act_num=81
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=1
+DEBUG: taking SHIFT branch
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=13
+DEBUG: yy_next() cur_state=81, inp=13
+DEBUG: yy_next() table[81] = 00007FF648320030
+DEBUG: yy_next() i=8
+DEBUG: yy_next returned act_num=-48
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=48 (negated from -48)
+DEBUG: REDUCE: production=48, rhs_len=0
+DEBUG: REDUCE: calling yy_act(48)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(48, 0)
+DEBUG: yy_next() cur_state=81, inp=22
+DEBUG: yy_next() table[81] = 00007FF6483206B0
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=87
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=13
+DEBUG: yy_next() cur_state=87, inp=13
+DEBUG: yy_next() table[87] = 00007FF6483200E0
+DEBUG: yy_next() i=8
+DEBUG: yy_next returned act_num=-38
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=38 (negated from -38)
+DEBUG: REDUCE: production=38, rhs_len=0
+DEBUG: REDUCE: calling yy_act(38)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(38, 0)
+DEBUG: yy_next() cur_state=87, inp=11
+DEBUG: yy_next() table[87] = 00007FF648320700
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=95
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=13
+DEBUG: yy_next() cur_state=95, inp=13
+DEBUG: yy_next() table[95] = 00007FF648320240
+DEBUG: yy_next() i=3
+DEBUG: yy_next returned act_num=-33
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=0
+DEBUG: REDUCE: act_num=33 (negated from -33)
+DEBUG: REDUCE: production=33, rhs_len=3
+DEBUG: REDUCE: calling yy_act(33)
+DEBUG: REDUCE: yy_act returned OK
+DEBUG: REDUCE: calling yy_reduce(33, 3)
+DEBUG: yy_next() cur_state=77, inp=11
+DEBUG: yy_next() table[77] = 00007FF648320680
+DEBUG: yy_next() i=1
+DEBUG: REDUCE: yy_reduce done, stack top=84
+DEBUG: loop iteration, separator_count=1
+DEBUG: calling yy_next(), yylookahead=13
+DEBUG: yy_next() cur_state=84, inp=13
+DEBUG: yy_next() table[84] = 00007FF6483200C0
+DEBUG: yy_next() i=2
+DEBUG: yy_next returned act_num=91
+DEBUG: checking act_num: YYF=32767, YY_IS_SHIFT=1
+DEBUG: taking SHIFT branch
+DEBUG: loop iteration, separator_count=2
+DEBUG: yyparse() done
+DEBUG: calling first()
+DEBUG: first() entered, Symtab=000001EE74750000
+DEBUG: first() loop iteration
+DEBUG: ptab starting, tabp->size=3072 (as int=3072)
+DEBUG: ptab checking slot 0, i=3071
+DEBUG: ptab slot=240 (i=2831), sym=000001EE74756021, sym+1=000001EE74756031, sym->next=0000000000000000
+DEBUG: first_closure() lhs=000001EE74756031 name=NUM
+DEBUG: first_closure() not a nonterm, returning
+DEBUG: ptab callback returned, checking sym->next=0000000000000000
+DEBUG: ptab checking slot 500, i=2571
+DEBUG: ptab slot=558 (i=2513), sym=000001EE7475625B, sym+1=000001EE7475626B, sym->next=0000000000000000
+DEBUG: first_closure() lhs=000001EE7475626B name=start
+DEBUG: first_closure() is nonterm, creating set
+DEBUG: first_closure() ASSIGN set=000001EE72C045F0, lhs->first=000001EE72C04350
+DEBUG: first_closure() ASSIGN done
+DEBUG: first_closure() lhs->productions=000001EE74756495
+DEBUG: first_closure() processing prod=000001EE74756495, non_acts=1, rhs_len=1
+DEBUG: first_closure() rhs element y=000001EE7475649D, *y=000001EE74756031
+DEBUG: first_closure() ISTERM, val=1
+DEBUG: first_closure() production loop done
+DEBUG: first_closure() checking IS_EQUIVALENT
+DEBUG: first_closure() sets not equivalent, updating
+DEBUG: first_closure() returning
+DEBUG: ptab callback returned, checking sym->next=0000000000000000
+DEBUG: ptab slot 558 chain done
+DEBUG: ptab checking slot 558, i=2513
+DEBUG: ptab checking slot 1000, i=2071
+DEBUG: ptab checking slot 1500, i=1571
+DEBUG: ptab checking slot 2000, i=1071
+DEBUG: ptab checking slot 2500, i=571
+DEBUG: ptab checking slot 3000, i=71
+DEBUG: ptab checking slot 3070, i=1
+DEBUG: ptab checking slot 3071, i=0
+DEBUG: ptab outer loop finished, final slot=3072, i=-1
+DEBUG: first() ptab done, Did_something=1
+DEBUG: first() loop iteration
+DEBUG: ptab starting, tabp->size=3072 (as int=3072)
+DEBUG: ptab checking slot 0, i=3071
+DEBUG: ptab slot=240 (i=2831), sym=000001EE74756021, sym+1=000001EE74756031, sym->next=0000000000000000
+DEBUG: first_closure() lhs=000001EE74756031 name=NUM
+DEBUG: first_closure() not a nonterm, returning
+DEBUG: ptab callback returned, checking sym->next=0000000000000000
+DEBUG: ptab checking slot 500, i=2571
+DEBUG: ptab slot=558 (i=2513), sym=000001EE7475625B, sym+1=000001EE7475626B, sym->next=0000000000000000
+DEBUG: first_closure() lhs=000001EE7475626B name=start
+DEBUG: first_closure() is nonterm, creating set
+DEBUG: first_closure() ASSIGN set=000001EE72C045F0, lhs->first=000001EE72C04350
+DEBUG: first_closure() ASSIGN done
+DEBUG: first_closure() lhs->productions=000001EE74756495
+DEBUG: first_closure() processing prod=000001EE74756495, non_acts=1, rhs_len=1
+DEBUG: first_closure() rhs element y=000001EE7475649D, *y=000001EE74756031
+DEBUG: first_closure() ISTERM, val=1
+DEBUG: first_closure() production loop done
+DEBUG: first_closure() checking IS_EQUIVALENT
+DEBUG: first_closure() returning
+DEBUG: ptab callback returned, checking sym->next=0000000000000000
+DEBUG: ptab slot 558 chain done
+DEBUG: ptab checking slot 558, i=2513
+DEBUG: ptab checking slot 1000, i=2071
+DEBUG: ptab checking slot 1500, i=1571
+DEBUG: ptab checking slot 2000, i=1071
+DEBUG: ptab checking slot 2500, i=571
+DEBUG: ptab checking slot 3000, i=71
+DEBUG: ptab checking slot 3070, i=1
+DEBUG: ptab checking slot 3071, i=0
+DEBUG: ptab outer loop finished, final slot=3072, i=-1
+DEBUG: first() ptab done, Did_something=0
+DEBUG: first() done
+DEBUG: first() done
+DEBUG: calling patch()
+DEBUG: ptab starting, tabp->size=3072 (as int=3072)
+DEBUG: ptab checking slot 0, i=3071
+DEBUG: ptab slot=240 (i=2831), sym=000001EE74756021, sym+1=000001EE74756031, sym->next=0000000000000000
+DEBUG: ptab callback returned, checking sym->next=0000000000000000
+DEBUG: ptab checking slot 500, i=2571
+DEBUG: ptab slot=558 (i=2513), sym=000001EE7475625B, sym+1=000001EE7475626B, sym->next=0000000000000000
+DEBUG: ptab callback returned, checking sym->next=0000000000000000
+DEBUG: ptab slot 558 chain done
+DEBUG: ptab checking slot 558, i=2513
+DEBUG: ptab checking slot 1000, i=2071
+DEBUG: ptab checking slot 1500, i=1571
+DEBUG: ptab checking slot 2000, i=1071
+DEBUG: ptab checking slot 2500, i=571
+DEBUG: ptab checking slot 3000, i=71
+DEBUG: ptab checking slot 3070, i=1
+DEBUG: ptab checking slot 3071, i=0
+DEBUG: ptab outer loop finished, final slot=3072, i=-1
+DEBUG: patch() done
+DEBUG: calling tables()

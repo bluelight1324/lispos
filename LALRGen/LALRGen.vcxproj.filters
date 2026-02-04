@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{9a44a01d-5824-4f72-99a2-5128c2021675}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{9be465a3-d45d-42a0-91bb-b61ca18df93a}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;fi;fd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{9e62dbc7-56d2-4552-ba60-1abd2e27c378}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ACTS.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ASSORT.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FERR.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FIRST.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HASH.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HASHADD.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="INPUT.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LEXYY.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MAIN.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ONFERR.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PRINTV.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PRNT.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SIGNON.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="STOK.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="YYCODE.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="YYDOLLAR.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="YYDRIVER.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="YYOUT.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="YYPATCH.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="YYSTATE.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Sets\SET.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\COMMON\REL FILES\VIRTUALMEM.C">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DEBUG.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DEF.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HASH.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HASPARS.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LLOUT.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SET.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="STACK.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Include\SYNMAIN.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="YYOUT.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="YYSTACK.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Include\yystate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="YYSTP.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Include\STDPAR.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="syn.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

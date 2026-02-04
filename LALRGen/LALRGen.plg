@@ -1,0 +1,95 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: SYN - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\MNAWAZ~1\LOCALS~1\Temp\RSP3F.tmp" with contents
+[
+/nologo /MTd /W3 /Gm /Gi /GR /GX /ZI /Od /Op /D "_CONSOLE" /D "STRICT" /D "_DEBUG" /D "WIN32" /D "SYN" /D "NO_MFC" /FR"C:\FILES\SYN\DBG/" /Fp"C:\FILES\SYN\DBG/SYN.pch" /YX /Fo"C:\FILES\SYN\DBG/" /Fd"C:\FILES\SYN\DBG/" /FD /c 
+"C:\Release\Src\SYN\ACTS.c"
+"C:\Release\Src\SYN\FERR.c"
+"C:\Release\Src\SYN\FIRST.c"
+"C:\Release\Src\SYN\HASH.c"
+"C:\Release\Src\SYN\HASHADD.c"
+"C:\Release\Src\SYN\INPUT.c"
+"C:\Release\Src\SYN\LEXYY.c"
+"C:\Release\Src\SYN\MAIN.c"
+"C:\Release\Src\SYN\PRINTV.c"
+"C:\Release\Src\SYN\PRNT.c"
+"C:\Release\SRC\SETS\SET.c"
+"C:\Release\Src\SYN\SIGNON.c"
+"C:\Release\Src\SYN\STOK.c"
+"C:\Release\SRC\SETS\virtualmem.c"
+"C:\Release\Src\SYN\YYDOLLAR.c"
+"C:\Release\Src\SYN\YYDRIVER.c"
+"C:\Release\Src\SYN\YYOUT.c"
+"C:\Release\Src\SYN\YYPATCH.c"
+"C:\Release\Src\SYN\YYSTATE.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\MNAWAZ~1\LOCALS~1\Temp\RSP3F.tmp" 
+Creating temporary file "C:\DOCUME~1\MNAWAZ~1\LOCALS~1\Temp\RSP40.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib lib.lib /nologo /subsystem:console /incremental:yes /pdb:"C:\FILES\SYN\DBG/SYN.pdb" /debug /machine:I386 /out:"C:\SYSTEST\BIN/SYN.exe" 
+\FILES\SYN\DBG\ACTS.obj
+\FILES\SYN\DBG\ASSORT.obj
+\FILES\SYN\DBG\FERR.obj
+\FILES\SYN\DBG\FIRST.obj
+\FILES\SYN\DBG\HASH.obj
+\FILES\SYN\DBG\HASHADD.obj
+\FILES\SYN\DBG\INPUT.obj
+\FILES\SYN\DBG\LEXYY.obj
+\FILES\SYN\DBG\MAIN.obj
+\FILES\SYN\DBG\ONFERR.obj
+\FILES\SYN\DBG\PRINTV.obj
+\FILES\SYN\DBG\PRNT.obj
+\FILES\SYN\DBG\SET.obj
+\FILES\SYN\DBG\SIGNON.obj
+\FILES\SYN\DBG\STOK.obj
+\FILES\SYN\DBG\virtualmem.obj
+\FILES\SYN\DBG\YYCODE.obj
+\FILES\SYN\DBG\YYDOLLAR.obj
+\FILES\SYN\DBG\YYDRIVER.obj
+\FILES\SYN\DBG\YYOUT.obj
+\FILES\SYN\DBG\YYPATCH.obj
+\FILES\SYN\DBG\YYSTATE.obj
+\FILES\SYN\DBG\syn.res
+]
+Creating command line "link.exe @C:\DOCUME~1\MNAWAZ~1\LOCALS~1\Temp\RSP40.tmp"
+<h3>Output Window</h3>
+Compiling...
+ACTS.c
+FERR.c
+FIRST.c
+HASH.c
+HASHADD.c
+INPUT.c
+LEXYY.c
+MAIN.c
+c:\release\src\syn\main.c(127) : warning C4101: 'ErrorMsg' : unreferenced local variable
+PRINTV.c
+PRNT.c
+SET.c
+c:\release\src\sets\set.c(0) : warning C4005: 'NO_MFC' : macro redefinition
+        unknown(0) : see previous definition of 'NO_MFC'
+SIGNON.c
+STOK.c
+virtualmem.c
+c:\release\src\sets\virtualmem.c(0) : warning C4005: 'NO_MFC' : macro redefinition
+        unknown(0) : see previous definition of 'NO_MFC'
+YYDOLLAR.c
+YYDRIVER.c
+YYOUT.c
+YYPATCH.c
+YYSTATE.c
+Linking...
+
+
+
+<h3>Results</h3>
+SYN.exe - 0 error(s), 3 warning(s)
+</pre>
+</body>
+</html>

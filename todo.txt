@@ -1,0 +1,9 @@
+1. doc how you will construct a lisp compiler using lalrgen.doc it.
+2. implement the doc you created in 1. use a separate subfolder for the lisp compiler.compile to masmdoc it.
+3. do a complete end to end test of the compiler to meet real world production specs. doc it
+4. what version of lisp is this ?doc
+5. what is the latest after R5RS. doc it.
+6. implement R6RS. doc
+7. implement R7RS. DOC.
+8. app permissions to compile and build allowed for this folder. make changes.
+9. do a complete end to end test of the compiler to meet real world production specs. doc it

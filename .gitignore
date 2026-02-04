@@ -1,0 +1,66 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+
+# Compiled Object files
+*.obj
+*.o
+*.lo
+*.slo
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.dll
+*.so
+*.dylib
+
+# Visual Studio files
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+Debug/
+Release/
+x64/
+x86/
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Claude Code
+.claude/
+
+# Generated assembly (can be regenerated)
+LispCompiler/test/*.asm
